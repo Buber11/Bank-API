@@ -82,4 +82,15 @@ public class UserAccount implements UserDetails {
     public boolean isEnabled() {
         return status == StatusEnum.ACTIVE;
     }
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

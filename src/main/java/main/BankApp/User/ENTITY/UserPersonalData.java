@@ -21,6 +21,8 @@ public class UserPersonalData {
     private String countryOfOrigin;
     private String phoneNumber;
     private String pesel;
+    @Column(name = "pesel_hash")
+    private String peselHash;
     private String idCardNumber;
 
     private LocalDateTime updatedAt;
@@ -30,5 +32,15 @@ public class UserPersonalData {
     @MapsId
     @JoinColumn(name = "user_id")
     private UserAccount userAccount;
+
+    @PrePersist
+    protected void onCreate() {
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 
 }

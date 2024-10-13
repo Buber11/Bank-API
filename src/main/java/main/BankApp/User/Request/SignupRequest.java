@@ -3,7 +3,7 @@ package main.BankApp.User.Request;
 import lombok.Builder;
 
 @Builder
-public record UserRequest(
+public record SignupRequest(
         String username,
         String password,
         String email,
