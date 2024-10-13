@@ -3,15 +3,18 @@ package main.BankApp.User.ENTITY;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 @Entity
 @Table(name = "user_accounts")
 @Builder
 @Data
-public class UserAccount {
+public class UserAccount implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId;
@@ -47,4 +50,36 @@ public class UserAccount {
     private List<UserConsent> userConsents;
 
 
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of();
+    }
+
+    @Override
+    public String getPassword() {
+        return passwordHash;
+    }
+    @Override
+    public String getUsername() {
+        return username;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return status != StatusEnum.CLOSED;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return status != StatusEnum.LOCKED;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return status != StatusEnum.SUSPENDED;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return status == StatusEnum.ACTIVE;
+    }
 }

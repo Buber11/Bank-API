@@ -25,5 +25,4 @@ public class Session {
     private boolean isActive;
     private String hmac;
 
-    // Getters and Setters
 }
