@@ -1,4 +1,4 @@
-package main.BankApp.User.Request;
+package main.BankApp.Auth.Request;
 
 import lombok.Builder;
 

@@ -1,6 +1,6 @@
 package main.BankApp.Auth;
 
-import main.BankApp.User.Request.SignupRequest;
+import main.BankApp.Auth.Request.SignupRequest;
 
 public interface AuthService {
 

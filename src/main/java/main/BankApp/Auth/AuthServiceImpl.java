@@ -7,13 +7,11 @@ import main.BankApp.User.ENTITY.UserAccount;
 import main.BankApp.User.ENTITY.UserPersonalData;
 import main.BankApp.User.Repository.UserPersonalDataRepository;
 import main.BankApp.User.Repository.UserRepository;
-import main.BankApp.User.Request.SignupRequest;
-import org.springframework.security.core.userdetails.User;
+import main.BankApp.Auth.Request.SignupRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class AuthServiceImpl implements AuthService{
