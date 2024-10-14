@@ -1,8 +1,10 @@
 package main.BankApp.User.ENTITY;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import main.BankApp.User.ENTITY.ConsentTypeEnum;
 import main.BankApp.User.ENTITY.UserAccount;
 
@@ -12,6 +14,8 @@ import java.time.LocalDateTime;
 @Table(name = "user_consent")
 @Builder
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserConsent {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

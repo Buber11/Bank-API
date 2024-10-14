@@ -1,8 +1,10 @@
 package main.BankApp.User.ENTITY;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -14,6 +16,8 @@ import java.util.List;
 @Table(name = "user_accounts")
 @Builder
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserAccount implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,6 +40,7 @@ public class UserAccount implements UserDetails {
     private boolean consentToCommunication;
     private boolean isBusinessAccount;
     private String hmac;
+
 
     @OneToOne(mappedBy = "userAccount", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private UserPersonalData userPersonalData;

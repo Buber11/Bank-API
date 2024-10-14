@@ -1,6 +1,7 @@
 package main.BankApp.Security;
 
 
+import main.BankApp.User.ENTITY.UserAccount;
 import main.BankApp.User.Repository.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,6 +12,8 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
+import java.util.Optional;
 
 
 @Configuration
@@ -23,8 +26,13 @@ public class ApplicationConfig {
 
     @Bean
     UserDetailsService userDetailsService() {
-        return username -> userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        return username -> {
+            Optional<UserAccount> user = userRepository.findByUsername(username);
+            if (user.isEmpty()) {
+                throw new UsernameNotFoundException("User not found");
+            }
+            return user.get();
+        };
     }
 
     @Bean

@@ -1,8 +1,10 @@
 package main.BankApp.User.ENTITY;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import main.BankApp.User.ENTITY.UserAccount;
 
 import java.time.LocalDateTime;
@@ -11,6 +13,8 @@ import java.time.LocalDateTime;
 @Table(name = "user_personal_data")
 @Builder
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserPersonalData {
 
     @Id
