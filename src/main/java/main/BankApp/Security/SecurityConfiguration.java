@@ -18,7 +18,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-public class SecurityConfiguration {
+public final class SecurityConfiguration {
 
     String[] endpoints = {
 

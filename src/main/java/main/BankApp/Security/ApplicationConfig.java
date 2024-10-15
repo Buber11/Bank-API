@@ -17,7 +17,7 @@ import java.util.Optional;
 
 
 @Configuration
-public class ApplicationConfig {
+public final class ApplicationConfig {
     private UserRepository userRepository;
 
     public ApplicationConfig(UserRepository userRepository) {

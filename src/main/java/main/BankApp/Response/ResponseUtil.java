@@ -3,7 +3,7 @@ package main.BankApp.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-public class ResponseUtil {
+public final class ResponseUtil {
 
     private ResponseUtil(){
         throw new AssertionError();
