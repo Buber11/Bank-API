@@ -14,22 +14,16 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public final class ActivityLog {
+public class ActivityLog {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long logId;
-
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private UserAccount userAccount;
+    private String logId;
 
     @ManyToOne
     @JoinColumn(name = "session_id", nullable = false)
     private Session session;
-
-    private String action;
+    @Enumerated(EnumType.STRING)
+    private ActivityLogAction action;
     private LocalDateTime timestamp;
-    private String ipAddress;
-    private String userAgent;
     private String hmac;
+
 }

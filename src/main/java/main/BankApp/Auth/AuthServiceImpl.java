@@ -5,19 +5,21 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import main.BankApp.Auth.Request.LoginRequest;
+import main.BankApp.BankAccount.Service.AccountService;
+import main.BankApp.BankAccount.entity.Account;
 import main.BankApp.Expection.DuplicateException;
 
 import main.BankApp.Expection.EncryptionException;
 import main.BankApp.Security.JwtService;
 import main.BankApp.SecurityAlgorithms.Hash.HashingService;
 import main.BankApp.SecurityAlgorithms.RSA.RSAService;
-import main.BankApp.User.ENTITY.StatusEnum;
-import main.BankApp.User.ENTITY.UserAccount;
-import main.BankApp.User.ENTITY.UserPersonalData;
+import main.BankApp.User.ENTITY.*;
 import main.BankApp.User.Repository.UserPersonalDataRepository;
 import main.BankApp.User.Repository.UserRepository;
 import main.BankApp.Auth.Request.SignupRequest;
 
+import main.BankApp.User.Service.Session.ActivityLogService;
+import main.BankApp.User.Service.Session.SessionService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -34,7 +36,7 @@ import org.slf4j.LoggerFactory;
 
 @Service
 @RequiredArgsConstructor
-public final class AuthServiceImpl implements AuthService {
+public class AuthServiceImpl implements AuthService {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthServiceImpl.class);
 
@@ -45,16 +47,20 @@ public final class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
-
+    private final SessionService sessionService;
+    private final ActivityLogService activityLogService;
+    private final AccountService accountService;
 
     @Override
     public void signup(SignupRequest request) {
         logger.info("Attempting to sign up user: {}", request.username());
 
         if (isPeselAlreadyExists(request.pesel())) {
+            logger.warn("Pesel already exists");
             throw new DuplicateException("This Pesel has already existed");
         }
-        if(userRepository.existsByUsername(request.username())){
+        if (userRepository.existsByUsername(request.username())) {
+            logger.warn("Username already exists: {}", request.username());
             throw new DuplicateException("This Username has already existed");
         }
 
@@ -65,6 +71,8 @@ public final class AuthServiceImpl implements AuthService {
             newUserAccount.setUserPersonalData(newUserPersonalData);
             newUserPersonalData.setUserAccount(newUserAccount);
 
+            Account account = accountService.createAccount(newUserAccount);
+            newUserAccount.setAccounts(List.of(account));
             userRepository.save(newUserAccount);
 
             logger.info("User {} successfully signed up", request.username());
@@ -77,8 +85,8 @@ public final class AuthServiceImpl implements AuthService {
 
     private boolean isPeselAlreadyExists(String pesel) {
         List<String> hashedPeselList = userPersonalDataRepository.findAllPeselHash();
-        for (String hashedPesel : hashedPeselList){
-            if(hashingService.matches(pesel,hashedPesel)){
+        for (String hashedPesel : hashedPeselList) {
+            if (hashingService.matches(pesel, hashedPesel)) {
                 return true;
             }
         }
@@ -86,6 +94,7 @@ public final class AuthServiceImpl implements AuthService {
     }
 
     private UserAccount buildUserAccount(SignupRequest request) throws Exception {
+        logger.debug("Building user account for username: {}", request.username());
         return UserAccount.builder()
                 .username(request.username())
                 .email(rsaService.encrypt(request.email()))
@@ -96,20 +105,21 @@ public final class AuthServiceImpl implements AuthService {
     }
 
     private UserPersonalData buildUserPersonalData(SignupRequest request) throws Exception {
+        logger.debug("Building personal data for user: {}", request.username());
         return UserPersonalData.builder()
                 .firstName(rsaService.encrypt(request.firstName()))
                 .lastName(rsaService.encrypt(request.lastName()))
                 .pesel(rsaService.encrypt(request.pesel()))
                 .peselHash(hashingService.hash(request.pesel()))
                 .idCardNumber(rsaService.encrypt("0"))
-                .phoneNumber(request.phoneNumber())
-                .countryOfOrigin(request.countryOfOrigin())
+                .phoneNumber(rsaService.encrypt(request.phoneNumber()))
+                .countryOfOrigin(rsaService.encrypt(request.countryOfOrigin()))
                 .hmac(hashingService.hash(request.firstName() + request.lastName() + request.pesel() + request.phoneNumber() + request.countryOfOrigin()))
                 .build();
     }
 
     @Override
-    public void authenticate(LoginRequest request, HttpServletResponse httpServletResponse) {
+    public void authenticate(LoginRequest request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
         logger.info("Attempting to authenticate user: {}", request.username());
 
         try {
@@ -120,7 +130,15 @@ public final class AuthServiceImpl implements AuthService {
             UserAccount user = userRepository.findByUsername(request.username())
                     .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
+            sessionService.invalidateSession(user.getUserId());
+
             addJwtCookieToResponse(user, httpServletResponse);
+
+            String ipAddress = sessionService.getClientIp(httpServletRequest);
+            String userAgent = sessionService.getUserAgent(httpServletRequest);
+
+            Session session = createSession(user, ipAddress, userAgent);
+            createLog(session, ActivityLogAction.LOGIN);
 
             logger.info("User {} successfully authenticated", request.username());
 
@@ -134,8 +152,19 @@ public final class AuthServiceImpl implements AuthService {
     }
 
     private void addJwtCookieToResponse(UserAccount user, HttpServletResponse response) {
+        logger.debug("Adding JWT cookie for user: {}", user.getUserId());
         Cookie cookie = jwtService.createJwtCookie(Map.of("id", user.getUserId()), user, "jwt_token");
         response.addCookie(cookie);
+    }
+
+    private Session createSession(UserAccount userAccount, String ipAddress, String userAgent) {
+        logger.debug("Creating session for user ID: {}", userAccount.getUserId());
+        return sessionService.createSession(userAccount, ipAddress, userAgent);
+    }
+
+    private void createLog(Session session, ActivityLogAction action) {
+        logger.debug("Creating activity log for session ID: {} with action: {}", session.getSessionId(), action);
+        activityLogService.createLog(session, action);
     }
 
     @Override
@@ -151,4 +180,11 @@ public final class AuthServiceImpl implements AuthService {
         logger.info("Token successfully refreshed for user ID: {}", userId);
     }
 
+    @Override
+    public void logout(HttpServletRequest request) {
+        String sessionId = (String) request.getAttribute("session_id");
+        logger.info("User with session ID: {} is logging out", sessionId);
+        sessionService.invalidateSession(sessionId);
+        logger.info("Session ID: {} invalidated", sessionId);
+    }
 }

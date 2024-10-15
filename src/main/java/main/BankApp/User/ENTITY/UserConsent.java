@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public final class UserConsent {
+public class UserConsent {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long consentId;

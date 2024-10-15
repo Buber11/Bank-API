@@ -19,7 +19,7 @@ public class UserController {
 
     @GetMapping()
     public UserAccount addUser(@RequestBody SignupRequest signupRequest){
-        return userRepository.findByUsername("jan.kowalski").get();
+        return userRepository.findByUsername("jan.kowal").get();
     }
 
 }

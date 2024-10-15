@@ -10,8 +10,10 @@ public interface AuthService {
 
     void signup(SignupRequest request);
 
-    void authenticate(LoginRequest request, HttpServletResponse response);
+    void authenticate(LoginRequest request, HttpServletRequest httpServletRequest,HttpServletResponse response);
 
     void refreshToken(HttpServletRequest request,  HttpServletResponse response);
+
+    void logout(HttpServletRequest request);
 
 }

@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import main.BankApp.BankAccount.entity.Account;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -18,7 +19,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public final class UserAccount implements UserDetails {
+public class UserAccount implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId;
@@ -27,7 +28,6 @@ public final class UserAccount implements UserDetails {
     private String passwordHash;
     private String email;
 
-    @Enumerated(EnumType.STRING)
     private StatusEnum status;
 
     private int failedLoginAttempts;
@@ -49,10 +49,10 @@ public final class UserAccount implements UserDetails {
     private List<Session> sessions;
 
     @OneToMany(mappedBy = "userAccount", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ActivityLog> activityLogs;
+    private List<UserConsent> userConsents;
 
     @OneToMany(mappedBy = "userAccount", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<UserConsent> userConsents;
+    private List<Account> accounts;
 
 
     public Collection<? extends GrantedAuthority> getAuthorities() {

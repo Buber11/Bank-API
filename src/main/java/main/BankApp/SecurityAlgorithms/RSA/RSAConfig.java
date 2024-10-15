@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public final class RSAConfig {
+public class RSAConfig {
     @Value("${public-key-rsa}")
     private String publicKey;
     @Value("${private-key-rsa}")

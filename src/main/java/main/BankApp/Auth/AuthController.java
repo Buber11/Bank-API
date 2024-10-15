@@ -18,7 +18,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-public final class AuthController {
+public class AuthController {
 
     private final AuthService authService;
 
@@ -29,8 +29,8 @@ public final class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest request, HttpServletResponse response){
-        authService.authenticate(request, response);
+    public ResponseEntity<String> login(@RequestBody LoginRequest request,HttpServletRequest httpServletRequest, HttpServletResponse response){
+        authService.authenticate(request, httpServletRequest ,response);
         return ResponseUtil.buildSuccessResponse("Authentication successful");
     }
 
@@ -38,6 +38,12 @@ public final class AuthController {
     public ResponseEntity<String> refreshToken(HttpServletRequest request, HttpServletResponse response){
         authService.refreshToken(request,response);
         return ResponseUtil.buildSuccessResponse("The token is refreshed");
+    }
+
+    @GetMapping("/logout")
+    public ResponseEntity<String> logout(HttpServletRequest request){
+        authService.logout(request);
+        return ResponseUtil.buildSuccessResponse("Your session isn't active");
     }
 
 

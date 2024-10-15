@@ -11,7 +11,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
-public final class RSAServiceImpl implements RSAService {
+public class RSAServiceImpl implements RSAService {
 
     private final PublicKey publicKey;
 

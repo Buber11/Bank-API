@@ -1,5 +1,6 @@
 package main.BankApp.User.ENTITY;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,7 +16,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public final class UserPersonalData {
+public class UserPersonalData {
 
     @Id
     private Long userId;
@@ -35,6 +36,7 @@ public final class UserPersonalData {
     @OneToOne
     @MapsId
     @JoinColumn(name = "user_id")
+    @JsonIgnore
     private UserAccount userAccount;
 
     @PrePersist
