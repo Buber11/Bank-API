@@ -1,6 +1,6 @@
 package main.BankApp.User.ENTITY;
 
-public enum ConsentTypeEnum {
+public enum ConsentType {
     MARKETING, DATA_SHARING, COMMUNICATION
 }
 

@@ -1,10 +1,8 @@
-package main.BankApp.User.Repository;
+package main.BankApp.Session.repository;
 
-import main.BankApp.User.ENTITY.ActivityLog;
+import main.BankApp.Session.enitity.ActivityLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
 
 @Repository
 public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> {

@@ -1,18 +1,16 @@
-package main.BankApp.User.Service.Session;
+package main.BankApp.Session.Session;
 
 import lombok.RequiredArgsConstructor;
 import main.BankApp.SecurityAlgorithms.Hash.HashingService;
-import main.BankApp.User.ENTITY.ActivityLog;
-import main.BankApp.User.ENTITY.ActivityLogAction;
-import main.BankApp.User.ENTITY.Session;
-import main.BankApp.User.ENTITY.UserAccount;
-import main.BankApp.User.Repository.ActivityLogRepository;
+import main.BankApp.Session.enitity.ActivityLog;
+import main.BankApp.Session.enitity.ActivityLogAction;
+import main.BankApp.Session.enitity.Session;
+import main.BankApp.Session.repository.ActivityLogRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor

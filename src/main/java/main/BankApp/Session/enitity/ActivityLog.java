@@ -1,4 +1,4 @@
-package main.BankApp.User.ENTITY;
+package main.BankApp.Session.enitity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

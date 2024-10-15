@@ -1,7 +1,8 @@
 package main.BankApp.Security;
 
 import lombok.RequiredArgsConstructor;
-import main.BankApp.User.Service.Session.SessionService;
+
+import main.BankApp.Session.Session.SessionService;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.stereotype.Component;

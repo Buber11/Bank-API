@@ -1,8 +1,6 @@
-package main.BankApp.User.Repository;
+package main.BankApp.Session.repository;
 
-import main.BankApp.User.ENTITY.Session;
-import main.BankApp.User.ENTITY.UserAccount;
-import org.apache.catalina.LifecycleState;
+import main.BankApp.Session.enitity.Session;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

@@ -1,14 +1,14 @@
-package main.BankApp.User.Service.Session;
+package main.BankApp.Session.Session;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import main.BankApp.SecurityAlgorithms.Hash.HashingService;
-import main.BankApp.User.ENTITY.Session;
+import main.BankApp.Session.enitity.Session;
 import main.BankApp.User.ENTITY.UserAccount;
-import main.BankApp.User.Repository.SessionRepository;
+import main.BankApp.Session.repository.SessionRepository;
 
 
-import main.BankApp.User.Service.User.UserService;
+import main.BankApp.User.Service.UserService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 

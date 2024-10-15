@@ -1,5 +1,5 @@
 package main.BankApp.User.ENTITY;
 
-public enum StatusEnum {
+public enum StatusAccount {
     ACTIVE, INACTIVE, SUSPENDED, LOCKED, PENDING, CLOSED
 }

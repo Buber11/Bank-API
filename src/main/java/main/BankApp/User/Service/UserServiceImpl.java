@@ -1,7 +1,7 @@
-package main.BankApp.User.Service.User;
+package main.BankApp.User.Service;
 
 import lombok.RequiredArgsConstructor;
-import main.BankApp.User.ENTITY.StatusEnum;
+import main.BankApp.User.ENTITY.StatusAccount;
 import main.BankApp.User.ENTITY.UserAccount;
 import main.BankApp.User.Repository.UserRepository;
 import org.slf4j.Logger;
@@ -19,7 +19,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public void lockAccount(UserAccount userAccount) {
         logger.info("Locking account for user ID: {}", userAccount.getUserId());
-        userAccount.setStatus(StatusEnum.LOCKED);
+        userAccount.setStatus(StatusAccount.LOCKED);
         userRepository.save(userAccount);
         logger.info("Account for user ID: {} has been locked", userAccount.getUserId());
     }

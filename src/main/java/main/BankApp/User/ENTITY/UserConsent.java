@@ -5,8 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import main.BankApp.User.ENTITY.ConsentTypeEnum;
-import main.BankApp.User.ENTITY.UserAccount;
 
 import java.time.LocalDateTime;
 
@@ -26,7 +24,7 @@ public class UserConsent {
     private UserAccount userAccount;
 
     @Enumerated(EnumType.STRING)
-    private ConsentTypeEnum consentType;
+    private ConsentType consentType;
 
     private boolean isGranted;
     private LocalDateTime consentDate;

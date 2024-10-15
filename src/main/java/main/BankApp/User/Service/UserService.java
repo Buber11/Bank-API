@@ -1,4 +1,4 @@
-package main.BankApp.User.Service.User;
+package main.BankApp.User.Service;
 
 import main.BankApp.User.ENTITY.UserAccount;
 

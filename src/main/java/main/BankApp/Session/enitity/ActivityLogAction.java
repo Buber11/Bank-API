@@ -1,4 +1,4 @@
-package main.BankApp.User.ENTITY;
+package main.BankApp.Session.enitity;
 
 public enum ActivityLogAction {
     LOGIN("User logged in"),

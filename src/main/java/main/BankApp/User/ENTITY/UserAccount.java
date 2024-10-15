@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import main.BankApp.BankAccount.entity.Account;
+import main.BankApp.Session.enitity.Session;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -28,7 +29,8 @@ public class UserAccount implements UserDetails {
     private String passwordHash;
     private String email;
 
-    private StatusEnum status;
+    @Enumerated(EnumType.STRING)
+    private StatusAccount status;
 
     private int failedLoginAttempts;
 
@@ -70,22 +72,22 @@ public class UserAccount implements UserDetails {
 
     @Override
     public boolean isAccountNonExpired() {
-        return status != StatusEnum.CLOSED;
+        return status != StatusAccount.CLOSED;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return status != StatusEnum.LOCKED;
+        return status != StatusAccount.LOCKED;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return status != StatusEnum.SUSPENDED;
+        return status != StatusAccount.SUSPENDED;
     }
 
     @Override
     public boolean isEnabled() {
-        return status == StatusEnum.ACTIVE;
+        return status == StatusAccount.ACTIVE;
     }
 
     @PrePersist

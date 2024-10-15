@@ -1,10 +1,8 @@
-package main.BankApp.User.Service.Session;
+package main.BankApp.Session.Session;
 
 import jakarta.servlet.http.HttpServletRequest;
-import main.BankApp.User.ENTITY.Session;
+import main.BankApp.Session.enitity.Session;
 import main.BankApp.User.ENTITY.UserAccount;
-
-import java.util.Optional;
 
 public interface SessionService {
 

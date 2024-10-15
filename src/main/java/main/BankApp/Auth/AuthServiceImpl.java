@@ -13,13 +13,16 @@ import main.BankApp.Expection.EncryptionException;
 import main.BankApp.Security.JwtService;
 import main.BankApp.SecurityAlgorithms.Hash.HashingService;
 import main.BankApp.SecurityAlgorithms.RSA.RSAService;
+import main.BankApp.Session.Session.ActivityLogService;
+import main.BankApp.Session.Session.SessionService;
+import main.BankApp.Session.enitity.ActivityLogAction;
+import main.BankApp.Session.enitity.Session;
 import main.BankApp.User.ENTITY.*;
 import main.BankApp.User.Repository.UserPersonalDataRepository;
 import main.BankApp.User.Repository.UserRepository;
 import main.BankApp.Auth.Request.SignupRequest;
 
-import main.BankApp.User.Service.Session.ActivityLogService;
-import main.BankApp.User.Service.Session.SessionService;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -99,8 +102,8 @@ public class AuthServiceImpl implements AuthService {
                 .username(request.username())
                 .email(rsaService.encrypt(request.email()))
                 .passwordHash(passwordEncoder.encode(request.password()))
-                .status(StatusEnum.ACTIVE)
-                .hmac(hashingService.hash(request.username() + request.email() + StatusEnum.PENDING + "0" + "False" + "False"))
+                .status(StatusAccount.ACTIVE)
+                .hmac(hashingService.hash(request.username() + request.email() + StatusAccount.PENDING + "0" + "False" + "False"))
                 .build();
     }
 
