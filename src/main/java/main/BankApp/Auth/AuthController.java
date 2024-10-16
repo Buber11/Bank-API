@@ -4,6 +4,7 @@ import com.sun.jdi.event.ExceptionEvent;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import main.BankApp.Auth.Request.LoginRequest;
 import main.BankApp.Auth.Request.SignupRequest;
@@ -23,7 +24,7 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/signup")
-    public ResponseEntity<String> signup(@RequestBody SignupRequest signupRequest) {
+    public ResponseEntity<String> signup(@Valid @RequestBody SignupRequest signupRequest) {
         authService.signup(signupRequest);
         return ResponseUtil.buildSuccessResponse("User registered successfully.");
     }

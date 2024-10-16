@@ -3,6 +3,9 @@ package main.BankApp.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.util.List;
+import java.util.Map;
+
 public final class ResponseUtil {
 
     private ResponseUtil(){
@@ -12,8 +15,11 @@ public final class ResponseUtil {
         return ResponseEntity.ok(message);
     }
 
-    public static ResponseEntity<String> buildErrorResponse(HttpStatus status, String message) {
-        return ResponseEntity.status(status).body(message);
+    public static ResponseEntity<Object> buildErrorResponse(HttpStatus status, String message) {
+        return ResponseEntity.status(status).body(Map.of("error", message));
+    }
+    public static ResponseEntity<Object> buildErrorResponse(HttpStatus status, List messages) {
+        return ResponseEntity.status(status).body(Map.of("errors", messages));
     }
 
 }
