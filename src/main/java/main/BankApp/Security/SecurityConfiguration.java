@@ -24,6 +24,7 @@ public class SecurityConfiguration {
 
             "api/auth/login",
             "api/auth/signup",
+            "api/currency/**"
     };
 
 

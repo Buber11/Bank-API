@@ -27,7 +27,6 @@ public class LoggingAspect {
         try {
             result = joinPoint.proceed();
         } catch (Exception ex) {
-
             logger.error("Exception in method {} with arguments: {}", joinPoint.getSignature(), Arrays.toString(args), ex);
             throw ex;
         }
