@@ -21,8 +21,8 @@ public class Contact {
     private Long contactId;
     private String name;
     private String numberAccount;
-    private String numberOfUse;
-    private String dateOfLastUse;
+    private Long numberOfUse;
+    private LocalDate dateOfLastUse;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

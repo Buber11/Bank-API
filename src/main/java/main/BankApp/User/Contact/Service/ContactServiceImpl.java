@@ -2,9 +2,7 @@ package main.BankApp.User.Contact.Service;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import main.BankApp.Expection.RSAException;
-import main.BankApp.SecurityAlgorithms.RSA.RSAService;
-import main.BankApp.User.Contact.Model.DTO.ContactDecrypted;
+
 import main.BankApp.User.Contact.Model.Entity.Contact;
 import main.BankApp.User.Contact.Model.Request.ContactRequest;
 import main.BankApp.User.Contact.Model.Response.ContactResponse;
@@ -13,7 +11,10 @@ import main.BankApp.User.ENTITY.UserAccount;
 import main.BankApp.User.Service.UserService;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,58 +22,46 @@ import java.util.stream.Collectors;
 public class ContactServiceImpl implements ContactService {
 
     private final ContactRepository contactRepository;
-    private final RSAService rsaService;
     private final UserService userService;
 
-    @Override
     public void save(ContactRequest contactRequest, HttpServletRequest request) {
         long userId = (long) request.getAttribute("id");
-        Contact encryptedContact = encryptContact(contactRequest);
-        UserAccount userAccount = userService.get(userId);
-        encryptedContact.setUserAccount(userAccount);
-        contactRepository.save(encryptedContact);
+
+        Optional<Contact> existingContact = contactRepository.findByNumberAccount(contactRequest.numberAccount());
+        if (existingContact.isPresent()) {
+            Contact contact = existingContact.get();
+            contact.setNumberOfUse(contact.getNumberOfUse() + 1);
+            contact.setDateOfLastUse(LocalDate.now());
+            contactRepository.save(contact);
+        } else {
+            Contact newContact = createContact(contactRequest);
+            UserAccount userAccount = userService.get(userId);
+            newContact.setUserAccount(userAccount);
+            contactRepository.save(newContact);
+        }
     }
 
     @Override
-    public List<ContactDecrypted> getAllContacts(HttpServletRequest request) {
+    public List getAllContacts(HttpServletRequest request) {
         long userId = (long) request.getAttribute("id");
         return contactRepository.findByUserAccount_UserId(userId).stream()
-                .map(this::decryptContact)
-                .sorted()
+                .sorted(Comparator.comparing(Contact::getNumberOfUse).reversed().thenComparing(Contact::getDateOfLastUse))
+                .map(this::createContactResponse)
                 .collect(Collectors.toList());
     }
 
-    private Contact encryptContact(ContactRequest contactRequest) {
-        try {
-            return Contact.builder()
-                    .name(rsaService.encrypt(contactRequest.name()))
-                    .numberAccount(rsaService.encrypt(contactRequest.numberAccount()))
-                    .dateOfLastUse(rsaService.encrypt(contactRequest.dateOfLastUse()))
-                    .numberOfUse(rsaService.encrypt(contactRequest.numberOfUse()))
-                    .build();
-        } catch (Exception e) {
-            throw new RSAException("Failed to encrypt contact", e);
-        }
+    private Contact createContact(ContactRequest contactRequest) {
+        return Contact.builder()
+                .name(contactRequest.name())
+                .numberAccount(contactRequest.numberAccount())
+                .dateOfLastUse(LocalDate.now())
+                .numberOfUse( Long.valueOf(1) )
+                .build();
     }
-
-    private ContactDecrypted decryptContact(Contact contact) {
-        try {
-            return ContactDecrypted.builder()
-                    .contactId(contact.getContactId())
-                    .name(rsaService.decrypt(contact.getName()))
-                    .numberAccount(rsaService.decrypt(contact.getNumberAccount()))
-                    .dateOfLastUse(rsaService.decrypt(contact.getDateOfLastUse()))
-                    .numberOfUse(rsaService.decrypt(contact.getNumberOfUse()))
-                    .build();
-        } catch (Exception e) {
-            throw new RSAException("Failed to decrypt contact", e);
-        }
-    }
-
-    private ContactResponse createContactResponse(ContactDecrypted contactDecrypted) {
+    private ContactResponse createContactResponse(Contact contact) {
         return ContactResponse.builder()
-                .name(contactDecrypted.getName())
-                .numberAccount(contactDecrypted.getNumberAccount())
+                .name(contact.getName())
+                .numberAccount(contact.getNumberAccount())
                 .build();
     }
 }
