@@ -21,5 +21,8 @@ public final class ResponseUtil {
     public static ResponseEntity<Object> buildErrorResponse(HttpStatus status, List messages) {
         return ResponseEntity.status(status).body(Map.of("errors", messages));
     }
+    public static ResponseEntity<List<?>> buildSuccessResponse(List objects){
+        return ResponseEntity.ok(objects);
+    }
 
 }

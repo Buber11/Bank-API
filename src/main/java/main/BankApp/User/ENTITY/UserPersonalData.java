@@ -28,6 +28,7 @@ public class UserPersonalData {
     private String pesel;
     @Column(name = "pesel_hash")
     private String peselHash;
+    private String sex;
     private String idCardNumber;
 
     private LocalDateTime updatedAt;
@@ -36,7 +37,6 @@ public class UserPersonalData {
     @OneToOne
     @MapsId
     @JoinColumn(name = "user_id")
-    @JsonIgnore
     private UserAccount userAccount;
 
     @PrePersist

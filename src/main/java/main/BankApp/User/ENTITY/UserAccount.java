@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import main.BankApp.BankAccount.entity.Account;
 import main.BankApp.Session.enitity.Session;
+import main.BankApp.User.Contact.Model.Entity.Contact;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -33,7 +34,6 @@ public class UserAccount implements UserDetails {
     private StatusAccount status;
 
     private int failedLoginAttempts;
-
     private LocalDateTime lastLogin;
     private boolean twoFactorEnabled;
     private LocalDateTime createdAt;
@@ -55,6 +55,9 @@ public class UserAccount implements UserDetails {
 
     @OneToMany(mappedBy = "userAccount", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Account> accounts;
+
+    @OneToMany(mappedBy = "userAccount", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Contact> contacts;
 
 
     public Collection<? extends GrantedAuthority> getAuthorities() {

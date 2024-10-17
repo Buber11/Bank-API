@@ -17,7 +17,6 @@ import java.time.LocalDateTime;
 public class ActivityLog {
     @Id
     private String logId;
-
     @ManyToOne
     @JoinColumn(name = "session_id", nullable = false)
     private Session session;

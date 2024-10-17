@@ -1,5 +1,6 @@
 package main.BankApp.User.Service;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import main.BankApp.User.ENTITY.StatusAccount;
 import main.BankApp.User.ENTITY.UserAccount;
@@ -23,4 +24,11 @@ public class UserServiceImpl implements UserService {
         userRepository.save(userAccount);
         logger.info("Account for user ID: {} has been locked", userAccount.getUserId());
     }
+
+    @Override
+    public UserAccount get(long id) {
+        return userRepository.findById(id)
+                .orElseThrow( EntityNotFoundException::new );
+    }
+
 }

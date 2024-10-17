@@ -6,7 +6,6 @@ public enum AccountType {
 
     private final String description;
 
-    // Constructor for each account type
     AccountType(String description) {
         this.description = description;
     }

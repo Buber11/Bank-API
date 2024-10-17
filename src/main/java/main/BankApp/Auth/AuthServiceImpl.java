@@ -9,7 +9,7 @@ import main.BankApp.BankAccount.Service.AccountService;
 import main.BankApp.BankAccount.entity.Account;
 import main.BankApp.Expection.DuplicateException;
 
-import main.BankApp.Expection.EncryptionException;
+import main.BankApp.Expection.RSAException;
 import main.BankApp.Security.JwtService;
 import main.BankApp.SecurityAlgorithms.Hash.HashingService;
 import main.BankApp.SecurityAlgorithms.RSA.RSAService;
@@ -23,6 +23,7 @@ import main.BankApp.User.Repository.UserRepository;
 import main.BankApp.Auth.Request.SignupRequest;
 
 
+import main.BankApp.app.Loggable;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -55,6 +56,7 @@ public class AuthServiceImpl implements AuthService {
     private final AccountService accountService;
 
     @Override
+    @Loggable
     public void signup(SignupRequest request) {
         logger.info("Attempting to sign up user: {}", request.username());
 
@@ -82,7 +84,7 @@ public class AuthServiceImpl implements AuthService {
 
         } catch (Exception e) {
             logger.error("An error occurred during signup for user: {}", request.username(), e);
-            throw new EncryptionException("An unexpected error occurred during encryption.", e);
+            throw new RSAException("An unexpected error occurred during encryption.", e);
         }
     }
 
@@ -122,6 +124,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Loggable
     public void authenticate(LoginRequest request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
         logger.info("Attempting to authenticate user: {}", request.username());
 
@@ -171,6 +174,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Loggable
     public void refreshToken(HttpServletRequest request, HttpServletResponse response) {
         long userId = (long) request.getAttribute("id");
         logger.info("Refreshing token for user with ID: {}", userId);
@@ -184,6 +188,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Loggable
     public void logout(HttpServletRequest request) {
         String sessionId = (String) request.getAttribute("session_id");
         logger.info("User with session ID: {} is logging out", sessionId);

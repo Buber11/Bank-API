@@ -22,6 +22,9 @@ public class Transaction {
     @Column(name = "transaction_id")
     private Long transactionID;
 
+    @Column(name = "reference_number", nullable = false)
+    private String referenceNumber;
+
     @Column(name = "transaction_date", nullable = false)
     private LocalDateTime transactionDate;
 
@@ -31,11 +34,8 @@ public class Transaction {
     @Column(name = "amount", precision = 15, scale = 2, nullable = false)
     private BigDecimal amount;
 
-    @Column(name = "reference_number", nullable = false)
-    private String referenceNumber;
-
-    @Column(name = "payee_payer", nullable = false)
-    private String payeePayer;
+    @Column(name = "payee_account_number", nullable = false)
+    private String payeeAccountNumber;
 
     @Column(name = "description")
     private String description;
