@@ -1,10 +1,11 @@
-package main.BankApp.Security;
+package main.BankApp.app;
 
 
 import main.BankApp.User.ENTITY.UserAccount;
 import main.BankApp.User.Repository.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;

@@ -1,4 +1,4 @@
-package main.BankApp.Security;
+package main.BankApp.app;
 
 import lombok.RequiredArgsConstructor;
 

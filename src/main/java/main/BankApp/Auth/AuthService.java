@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import main.BankApp.Auth.Request.LoginRequest;
 import main.BankApp.Auth.Request.SignupRequest;
+import main.BankApp.app.Loggable;
 import org.springframework.security.core.AuthenticationException;
 
 public interface AuthService {

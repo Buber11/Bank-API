@@ -9,6 +9,7 @@ import main.BankApp.User.Contact.Model.Response.ContactResponse;
 import main.BankApp.User.Contact.Repository.ContactRepository;
 import main.BankApp.User.ENTITY.UserAccount;
 import main.BankApp.User.Service.UserService;
+import main.BankApp.app.Loggable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -24,6 +25,7 @@ public class ContactServiceImpl implements ContactService {
     private final ContactRepository contactRepository;
     private final UserService userService;
 
+    @Loggable
     public void save(ContactRequest contactRequest, HttpServletRequest request) {
         long userId = (long) request.getAttribute("id");
 
@@ -42,6 +44,7 @@ public class ContactServiceImpl implements ContactService {
     }
 
     @Override
+    @Loggable
     public List getAllContacts(HttpServletRequest request) {
         long userId = (long) request.getAttribute("id");
         return contactRepository.findByUserAccount_UserId(userId).stream()

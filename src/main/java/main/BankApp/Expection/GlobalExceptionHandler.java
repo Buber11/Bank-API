@@ -1,9 +1,10 @@
-package main.BankApp.Response;
+package main.BankApp.Expection;
 
 import jakarta.persistence.EntityNotFoundException;
 import main.BankApp.Expection.DuplicateException;
 
 import main.BankApp.Expection.RSAException;
+import main.BankApp.Response.ResponseUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
@@ -49,6 +50,10 @@ public class GlobalExceptionHandler {
         List<String> errors = ex.getBindingResult().getFieldErrors().stream()
                 .map(error -> error.getField() + " - " + error.getDefaultMessage())
                 .collect(Collectors.toList());
+
+        ex.getBindingResult().getGlobalErrors().stream()
+                .map(globalError -> globalError.getObjectName() + " - " + globalError.getDefaultMessage())
+                .forEach(errors::add);
 
         return ResponseUtil.buildErrorResponse(status,errors);
     }
