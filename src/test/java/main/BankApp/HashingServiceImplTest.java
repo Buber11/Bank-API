@@ -2,10 +2,9 @@ package main.BankApp;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import main.BankApp.SecurityAlgorithms.Hash.HashingServiceImpl;
+import main.BankApp.service.hashing.HashingServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 public class HashingServiceImplTest {
 

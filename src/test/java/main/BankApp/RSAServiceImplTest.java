@@ -1,6 +1,6 @@
 package main.BankApp;
 
-import main.BankApp.SecurityAlgorithms.RSA.RSAServiceImpl;
+import main.BankApp.service.rsa.RSAServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
