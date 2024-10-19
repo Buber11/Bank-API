@@ -7,7 +7,7 @@ import main.BankApp.model.session.Session;
 public interface ActivityLogService {
     ActivityLog createLog(Session session, ActivityLogAction action);
 
-    ActivityLog getLog(Long logId);
+    ActivityLog getLog(String logId);
 
-    void deleteLog(Long logId);
+    void deleteLog(String logId);
 }

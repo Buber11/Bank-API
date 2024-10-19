@@ -41,13 +41,13 @@ public final class ActivityLogServiceImpl implements ActivityLogService {
     }
 
     @Override
-    public ActivityLog getLog(Long logId) {
+    public ActivityLog getLog(String logId) {
         logger.info("Fetching log with ID: {}", logId);
         return activityLogRepository.findById(logId).orElse(null);
     }
 
     @Override
-    public void deleteLog(Long logId) {
+    public void deleteLog(String logId) {
         logger.info("Deleting log with ID: {}", logId);
         activityLogRepository.deleteById(logId);
     }

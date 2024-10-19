@@ -1,4 +1,4 @@
-package main.BankApp;
+package main.BankApp.service;
 
 import jakarta.servlet.http.HttpServletRequest;
 import main.BankApp.model.user.Contact;

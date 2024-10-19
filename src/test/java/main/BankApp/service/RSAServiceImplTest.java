@@ -1,4 +1,4 @@
-package main.BankApp;
+package main.BankApp.service;
 
 import main.BankApp.service.rsa.RSAServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
