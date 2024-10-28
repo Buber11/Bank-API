@@ -2,7 +2,7 @@ package main.BankApp.service.currency;
 
 import lombok.RequiredArgsConstructor;
 import main.BankApp.model.currency.CurrencyRate;
-import main.BankApp.annotation.Loggable;
+import main.BankApp.common.Loggable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;

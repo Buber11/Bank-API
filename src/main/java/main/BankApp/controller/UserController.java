@@ -1,23 +1,30 @@
 package main.BankApp.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import main.BankApp.dto.UserDataView;
 import main.BankApp.request.auth.SignupRequest;
 import main.BankApp.model.user.UserAccount;
 import main.BankApp.repository.UserRepository;
+import main.BankApp.service.user.UserService;
+import main.BankApp.util.ResponseUtil;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.http.HttpResponse;
+
 @RestController
-@RequestMapping("/user")
+@RequestMapping("api/user/getData")
+@RequiredArgsConstructor
 public class UserController {
 
-    UserRepository userRepository;
+    private final UserService userService;
 
-    public UserController(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
-
-    @GetMapping()
-    public UserAccount addUser(@RequestBody SignupRequest signupRequest){
-        return userRepository.findByUsername("jan.kowal").get();
+    @GetMapping
+    public ResponseEntity<Object> getUserView(HttpServletRequest request){
+        UserDataView view = userService.getUserView(request);
+        return ResponseUtil.buildSuccessResponse(view);
     }
 
 }

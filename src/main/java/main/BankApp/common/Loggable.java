@@ -1,4 +1,4 @@
-package main.BankApp.annotation;
+package main.BankApp.common;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -8,7 +8,7 @@ import main.BankApp.request.contact.ContactRequest;
 import main.BankApp.response.ContactResponse;
 import main.BankApp.repository.ContactRepository;
 import main.BankApp.model.user.UserAccount;
-import main.BankApp.annotation.Loggable;
+import main.BankApp.common.Loggable;
 import main.BankApp.service.user.UserService;
 import org.springframework.stereotype.Service;
 
@@ -39,7 +39,7 @@ public class ContactServiceImpl implements ContactService {
             contactRepository.save(contact);
         } else {
             Contact newContact = createContact(contactRequest);
-            UserAccount userAccount = userService.get(userId);
+            UserAccount userAccount = userService.getUser(userId);
             newContact.setUserAccount(userAccount);
             contactRepository.save(newContact);
         }

@@ -19,7 +19,7 @@ import main.BankApp.repository.UserRepository;
 import main.BankApp.request.auth.SignupRequest;
 
 
-import main.BankApp.annotation.Loggable;
+import main.BankApp.common.Loggable;
 import main.BankApp.service.hashing.HashingService;
 import main.BankApp.security.JwtService;
 import main.BankApp.service.rsa.RSAService;

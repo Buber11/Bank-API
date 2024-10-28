@@ -1,4 +1,4 @@
-package main.BankApp.annotation;
+package main.BankApp.common;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;

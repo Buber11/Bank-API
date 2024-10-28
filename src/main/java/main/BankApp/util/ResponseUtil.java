@@ -24,5 +24,8 @@ public final class ResponseUtil {
     public static ResponseEntity<List<?>> buildSuccessResponse(List objects){
         return ResponseEntity.ok(objects);
     }
+    public static ResponseEntity<Object>  buildSuccessResponse(Object obj){
+        return ResponseEntity.ok(obj);
+    }
 
 }
