@@ -20,9 +20,13 @@ import java.util.Optional;
 
 @Configuration
 @EnableScheduling
-@RequiredArgsConstructor
 public class ApplicationConfig {
-    private UserRepository userRepository;
+
+    private final UserRepository userRepository;
+
+    public ApplicationConfig(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @Bean
     UserDetailsService userDetailsService() {

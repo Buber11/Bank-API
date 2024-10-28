@@ -1,18 +1,19 @@
 package main.BankApp.dto;
 
-import lombok.Builder;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Data
 @Builder
-@RequiredArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 public class TransactionClientView {
     private String referenceNumber;
     private BigDecimal amount;
     private String payeeAccountNumber;
     private String description;
+    private LocalDate transactionDate;
 
 }

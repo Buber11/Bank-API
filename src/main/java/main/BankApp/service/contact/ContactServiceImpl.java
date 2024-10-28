@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,10 +25,11 @@ public class ContactServiceImpl implements ContactService {
 
     private final ContactRepository contactRepository;
     private final UserService userService;
+    private final Function<HttpServletRequest,Long> getUserIdFromJwt = e -> (Long) e.getAttribute("id");
 
     @Loggable
     public void save(ContactRequest contactRequest, HttpServletRequest request) {
-        long userId = (long) request.getAttribute("id");
+        Long userId = getUserIdFromJwt.apply(request);
 
         Optional<Contact> existingContact = contactRepository.findByNumberAccount(contactRequest.numberAccount());
         if (existingContact.isPresent()) {
@@ -46,7 +48,7 @@ public class ContactServiceImpl implements ContactService {
     @Override
     @Loggable
     public List<ContactResponse> getAllContacts(HttpServletRequest request) {
-        long userId = (long) request.getAttribute("id");
+        Long userId = getUserIdFromJwt.apply(request);
 
         return contactRepository.findByUserAccount_UserId(userId).stream()
                 .sorted(Comparator.comparing(Contact::getNumberOfUse).reversed().thenComparing(Contact::getDateOfLastUse))

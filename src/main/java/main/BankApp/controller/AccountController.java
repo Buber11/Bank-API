@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AccountController {
 
-    AccountService accountService;
+    private final AccountService accountService;
 
     @GetMapping("/create")
     public ResponseEntity createBankAccount(HttpServletRequest request){
@@ -23,7 +23,8 @@ public class AccountController {
 
     @GetMapping("/get")
     public ResponseEntity getAllAccounts(HttpServletRequest request){
-        return null;
+        var accounts = accountService.getAlAccounts(request);
+        return ResponseUtil.buildSuccessResponse(accounts);
     }
 
     @GetMapping("/transaction/getAll")

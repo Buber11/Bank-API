@@ -54,7 +54,7 @@ public final class ActivityLogServiceImpl implements ActivityLogService {
 
     private String generateSessionId() {
         String sessionId = java.util.UUID.randomUUID().toString();
-        logger.debug("Generated session ID: {}", sessionId);  // Debug log for session ID generation
+        logger.debug("Generated session ID: {}", sessionId);
         return sessionId;
     }
 }

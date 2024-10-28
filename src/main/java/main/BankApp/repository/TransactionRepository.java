@@ -1,14 +1,15 @@
 package main.BankApp.repository;
 
-import main.BankApp.model.account.Account;
 import main.BankApp.model.account.Transaction;
+import org.hibernate.annotations.processing.SQL;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-@Repository
-public interface AccountRepository extends JpaRepository<Account,Long> {
 
-    List<Account> findByUserAccount_UserId(Long id);
+@Repository
+public interface TransactionRepository extends JpaRepository<Transaction,Long> {
+
 
 }
