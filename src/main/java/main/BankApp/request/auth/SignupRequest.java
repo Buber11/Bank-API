@@ -7,7 +7,7 @@ import lombok.Builder;
 import main.BankApp.common.Pesel;
 
 @Builder
-@Pesel
+//@Pesel
 public record SignupRequest(
         @Size(min = 5, max = 10, message = "Username must be between 5 and 10 characters")
         @Pattern(regexp = "^[a-zA-Z]+$", message = "Username cannot contain numbers or special characters")

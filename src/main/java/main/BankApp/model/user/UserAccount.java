@@ -92,6 +92,25 @@ public class UserAccount implements UserDetails {
         return status == StatusAccount.ACTIVE;
     }
 
+    @Override
+    public String toString() {
+        return "UserAccount{" +
+                "userId=" + userId +
+                ", username='" + username + '\'' +
+                ", passwordHash='" + passwordHash + '\'' +
+                ", email='" + email + '\'' +
+                ", status=" + status +
+                ", failedLoginAttempts=" + failedLoginAttempts +
+                ", lastLogin=" + lastLogin +
+                ", twoFactorEnabled=" + twoFactorEnabled +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                ", consentToCommunication=" + consentToCommunication +
+                ", isBusinessAccount=" + isBusinessAccount +
+                ", hmac='" + hmac + '\'' +
+                '}';
+    }
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

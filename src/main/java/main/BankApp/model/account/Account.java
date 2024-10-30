@@ -1,5 +1,6 @@
 package main.BankApp.model.account;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -41,10 +42,14 @@ public class Account {
 
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "userId", nullable = false)
+    @JsonIgnore
     private UserAccount userAccount;
 
-    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Transaction> transactions;
+    @OneToMany(mappedBy = "hostAccount", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Transaction> transactionsOut;
+
+    @OneToMany(mappedBy = "payeeAccount")
+    private List<Transaction> transactionsIn;
 
 
 }

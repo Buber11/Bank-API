@@ -7,7 +7,8 @@ import main.BankApp.model.user.UserAccount;
 public interface UserService {
 
     void lockAccount(UserAccount userAccount);
-    UserAccount getUser(long id);
-    UserDataView getUserView(HttpServletRequest request);
 
+    UserAccount getUser(long id);
+
+    UserDataView getUserView(HttpServletRequest request);
 }

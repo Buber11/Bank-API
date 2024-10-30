@@ -2,8 +2,10 @@ package main.BankApp.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import main.BankApp.model.account.Transaction;
 import main.BankApp.request.transaction.TransactionRequest;
 import main.BankApp.service.account.AccountService;
+import main.BankApp.service.account.TransactionService;
 import main.BankApp.util.ResponseUtil;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 public class AccountController {
 
     private final AccountService accountService;
+
 
     @GetMapping("/create")
     public ResponseEntity createBankAccount(HttpServletRequest request){
@@ -27,14 +30,11 @@ public class AccountController {
         return ResponseUtil.buildSuccessResponse(accounts);
     }
 
-    @GetMapping("/transaction/getAll")
-    public ResponseEntity getAllTransaction(HttpServletRequest request){
-        return null;
-    }
 
-    @PostMapping("/transaction/save")
-    public ResponseEntity saveTransaction(HttpServletRequest httpServletRequest, @RequestBody TransactionRequest transactionRequest){
-        return null;
+    @PostMapping("/transaction/own")
+    public ResponseEntity doTransaction(@RequestBody TransactionRequest transactionRequest, HttpServletRequest request){
+        accountService.makeOwnTransaction(request, transactionRequest);
+        return ResponseUtil.buildSuccessResponse("Transaction is done");
     }
 
 }

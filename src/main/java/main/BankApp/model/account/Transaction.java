@@ -1,5 +1,6 @@
 package main.BankApp.model.account;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,16 +35,19 @@ public class Transaction {
     @Column(name = "amount", precision = 15, scale = 2, nullable = false)
     private BigDecimal amount;
 
-    @Column(name = "payee_account_number", nullable = false)
-    private String payeeAccountNumber;
-
     private String description;
 
     private String hmac;
 
     @ManyToOne
-    @JoinColumn(name = "account_number", referencedColumnName = "account_number", nullable = false)
-    private Account account;
+    @JoinColumn(name = "host_account_number", referencedColumnName = "account_number", nullable = false)
+    @JsonIgnore
+    private Account hostAccount;
+
+    @ManyToOne
+    @JoinColumn(name = "payee_account_number", referencedColumnName = "account_number", nullable = false)
+    @JsonIgnore
+    private Account payeeAccount;
 
 
 }

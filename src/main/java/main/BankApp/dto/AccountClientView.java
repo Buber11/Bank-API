@@ -16,5 +16,6 @@ public class AccountClientView {
     private String accountNumber;
     private AccountType accountType;
     private String balance;
-    private List<TransactionClientView> transactions;
+    private List<TransactionClientView> transactionsOut;
+    private List<TransactionClientView> transactionsIn;
 }

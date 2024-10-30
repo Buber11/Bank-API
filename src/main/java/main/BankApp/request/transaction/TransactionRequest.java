@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public record TransactionRequest(
+        String accountNumber,
         LocalDateTime transactionDate,
         BigDecimal amount,
         String payeeAccountNumber,

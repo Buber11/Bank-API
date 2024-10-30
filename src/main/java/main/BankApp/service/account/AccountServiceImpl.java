@@ -2,27 +2,29 @@ package main.BankApp.service.account;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import main.BankApp.common.Loggable;
 import main.BankApp.dto.AccountClientView;
 import main.BankApp.expection.AccountCreationException;
 import main.BankApp.expection.RSAException;
 import main.BankApp.model.account.Account;
 import main.BankApp.model.account.AccountStatus;
 import main.BankApp.model.account.AccountType;
+import main.BankApp.model.account.Transaction;
 import main.BankApp.repository.AccountRepository;
 import main.BankApp.model.user.UserAccount;
 import main.BankApp.repository.UserRepository;
+import main.BankApp.request.transaction.TransactionRequest;
 import main.BankApp.service.rsa.RSAService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -35,11 +37,11 @@ public class AccountServiceImpl implements AccountService {
     private final String BANK_CODE = "6666";
     private final String COUNTRY_CODE_NUMERIC = "2521";
     private final String COUNTRY_CODE = "PL";
-
     private final AccountRepository accountRepository;
     private final RSAService rsaService;
     private final UserRepository userRepository;
     private final TransactionService transactionService;
+
 
     private final Function<HttpServletRequest,Long> getUserIdFromJwt = e -> (Long) e.getAttribute("id");
 
@@ -88,7 +90,7 @@ public class AccountServiceImpl implements AccountService {
                     .accountNumber(generateBankAccountNumber())
                     .accountStatus(rsaService.encrypt(AccountStatus.ACTIVE.toString()))
                     .userAccount(user)
-                    .balance(rsaService.encrypt(BigInteger.ZERO.toString()))
+                    .balance(rsaService.encrypt("1000"))
                     .openDate(LocalDate.now())
                     .accountType(rsaService.encrypt(AccountType.PERSONAL.toString()))
                     .build();
@@ -151,10 +153,14 @@ public class AccountServiceImpl implements AccountService {
                     .accountNumber(account.getAccountNumber())
                     .accountType(AccountType.valueOf(rsaService.decrypt(account.getAccountType())))
                     .balance(rsaService.decrypt(account.getBalance()))
-                    .transactions(account.getTransactions().stream()
-                            .map(transactionService::mapTransactionToView)
-                            .collect(Collectors.toList()))
+                    .transactionsOut(account.getTransactionsOut().stream()
+                            .map(TransactionMapper::mapTransactionToView)
+                            .collect(Collectors.toList()) )
+                    .transactionsIn( account.getTransactionsIn().stream()
+                            .map(TransactionMapper::mapTransactionToView)
+                            .collect(Collectors.toList()) )
                     .build();
+            
         } catch (Exception e) {
             logger.error("Decryption error: {}", e.getMessage(), e);
             throw new RSAException("Error while decrypting account data", e);
@@ -164,6 +170,60 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public List<AccountClientView> getAllAccountsActive() {
         return null;
+    }
+
+    @Override
+    @Transactional
+    public void makeOwnTransaction(HttpServletRequest request, TransactionRequest transactionRequest) {
+        long userId = getUserIdFromJwt.apply(request);
+        AbstractMap.SimpleEntry<Account,Account> accountSimpleEntry = changeBalansAndGet( userId,
+                transactionRequest.accountNumber(),
+                transactionRequest.payeeAccountNumber(),
+                transactionRequest.amount());
+        transactionService.saveTransaction(transactionRequest, accountSimpleEntry);
+    }
+
+    @Override
+    public void makeCountryTransaction(HttpServletRequest request, TransactionRequest transactionRequest) {
+
+    }
+
+    @Override
+    public void makeGroupTransaction(HttpServletRequest request, List<TransactionRequest> transactionRequests) {
+
+    }
+
+
+    private AbstractMap.SimpleEntry<Account,Account> changeBalansAndGet(long userId, String accountNumber, String payeeAccountNumber, BigDecimal value) {
+        Optional<Account> hostTransactionAccount = accountRepository.findByAccountNumberAndUserAccount_UserId(accountNumber, userId);
+        hostTransactionAccount.ifPresentOrElse( account -> {
+            try {
+                BigDecimal balans = new BigDecimal(rsaService.decrypt(account.getBalance()));
+                balans = balans.subtract(value);
+                account.setBalance(rsaService.encrypt(balans.toString()));
+                accountRepository.save(account);
+            } catch (Exception e) {
+                throw new RuntimeException("Error while updating balance", e);
+            }
+        }, () -> {
+            throw new EntityNotFoundException("Account with number " + accountNumber + " not found");
+        });
+
+        Optional<Account> accountToUpdate = accountRepository.findByAccountNumber(payeeAccountNumber);
+        accountToUpdate.ifPresentOrElse(account -> {
+            try {
+                BigDecimal balans = new BigDecimal(rsaService.decrypt(account.getBalance()));
+                balans = balans.add(value);
+                account.setBalance(rsaService.encrypt(balans.toString()));
+                accountRepository.save(account);
+            } catch (Exception e) {
+                throw new RuntimeException("Error while updating balance", e);
+            }
+        }, () -> {
+            throw new EntityNotFoundException("Account with number " + accountNumber + " not found");
+        });
+
+        return new AbstractMap.SimpleEntry(hostTransactionAccount.get(), accountToUpdate.get());
     }
 
 

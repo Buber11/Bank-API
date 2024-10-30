@@ -1,5 +1,6 @@
 package main.BankApp.model.session;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,6 +20,7 @@ public class ActivityLog {
     private String logId;
     @ManyToOne
     @JoinColumn(name = "session_id", nullable = false)
+    @JsonIgnore
     private Session session;
     @Enumerated(EnumType.STRING)
     private ActivityLogAction action;
