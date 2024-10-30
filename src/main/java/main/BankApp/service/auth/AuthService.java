@@ -15,4 +15,6 @@ public interface AuthService {
 
     void logout(HttpServletRequest request);
 
+    void deactivate(HttpServletRequest request);
+
 }

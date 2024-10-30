@@ -35,6 +35,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -196,5 +197,15 @@ public class AuthServiceImpl implements AuthService {
         logger.info("User with session ID: {} is logging out", sessionId);
         sessionService.invalidateSession(sessionId);
         logger.info("Session ID: {} invalidated", sessionId);
+    }
+
+    @Override
+    public void deactivate(HttpServletRequest request) {
+        long userId = (long) request.getAttribute("id");
+        Optional<UserAccount> userAccount = userRepository.findById(userId);
+        userAccount.ifPresentOrElse(user -> {
+            user.setStatus(StatusAccount.INACTIVE);
+            userRepository.save(user);
+        }, EntityNotFoundException::new);
     }
 }

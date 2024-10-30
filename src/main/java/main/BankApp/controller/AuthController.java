@@ -42,6 +42,12 @@ public class AuthController {
         return ResponseUtil.buildSuccessResponse("Your session isn't active");
     }
 
+    @PatchMapping("/deactivate")
+    public ResponseEntity deactivate(HttpServletRequest request){
+        authService.deactivate(request);
+        return ResponseEntity.noContent().build();
+    }
+
 
 }
 
