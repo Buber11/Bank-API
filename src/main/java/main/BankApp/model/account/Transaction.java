@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "Transactions")
@@ -27,7 +28,7 @@ public class Transaction {
     private String referenceNumber;
 
     @Column(name = "transaction_date", nullable = false)
-    private LocalDate transactionDate;
+    private LocalDateTime transactionDate;
 
     @Column(name = "Transaction_Type", nullable = false)
     private String transactionType;

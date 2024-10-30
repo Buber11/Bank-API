@@ -1,20 +1,23 @@
 package main.BankApp.service.account;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import main.BankApp.dto.TransactionClientView;
 import main.BankApp.expection.RSAException;
 import main.BankApp.model.account.Account;
 import main.BankApp.model.account.Transaction;
 import main.BankApp.repository.TransactionRepository;
+import main.BankApp.request.transaction.MultipleTransactionRequest;
+import main.BankApp.request.transaction.SingleTransactionRequest;
 import main.BankApp.request.transaction.TransactionRequest;
 import main.BankApp.service.rsa.RSAService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.AbstractMap;
 import java.util.List;
 import java.util.function.Function;
@@ -45,41 +48,69 @@ public class TransactionServiceImpl implements TransactionService{
     }
 
     @Override
-    public Page<Transaction> getTransactions(Pageable pageable, String accountNumber, String status) {
-
+    public Page<TransactionClientView> getTransactions(Pageable pageable, String accountNumber, String status) {
+        Page<Transaction> transactions;
         if (status.equalsIgnoreCase("in")) {
-            return transactionRepository.findByPayeeAccount_AccountNumber(accountNumber, pageable);
+            transactions = transactionRepository.findByPayeeAccount_AccountNumber(accountNumber, pageable);
         } else if (status.equalsIgnoreCase("out")) {
-            return transactionRepository.findByHostAccount_AccountNumber(accountNumber, pageable);
+            transactions = transactionRepository.findByHostAccount_AccountNumber(accountNumber, pageable);
         } else {
             throw new IllegalArgumentException("Invalid status: use 'in' or 'out'");
         }
-
+        return transactions.map(transaction -> TransactionMapper.mapTransactionToView(transaction,rsaService));
     }
 
 
     private Transaction createTransaction(TransactionRequest transactionRequest) {
         String referenceNumber = generateReferenceNumber();
-        LocalDate transactionDate = transactionRequest.transactionDate().toLocalDate();
-        System.out.println(transactionDate);
-        try {
-            return Transaction.builder()
-                    .referenceNumber( rsaService.encrypt(referenceNumber) )
-                    .transactionDate(transactionDate)
-                    .transactionType(rsaService.encrypt(transactionRequest.transactionType().toString()))
-                    .amount(transactionRequest.amount())
-                    .description(transactionRequest.description())
-                    .hmac( rsaService.encrypt( new StringBuilder()
-                            .append(referenceNumber)
-                            .append(transactionRequest.amount().toString())
-                            .append(transactionRequest.payeeAccountNumber())
-                            .toString() )
-                    )
-                    .build();
-        } catch (Exception e) {
-            throw new RSAException(e.getMessage(),e);
-        }
 
+        if (transactionRequest instanceof SingleTransactionRequest( String hostAccountNumber,
+                                                                    BigDecimal amount,
+                                                                    String payeeAccountNumber,
+                                                                    String description,
+                                                                    String transactionType)) {
+            try {
+                return Transaction.builder()
+                        .referenceNumber( rsaService.encrypt(referenceNumber) )
+                        .transactionDate(LocalDateTime.now())
+                        .transactionType(rsaService.encrypt(transactionType.toString()))
+                        .amount(amount)
+                        .description(description)
+                        .hmac( rsaService.encrypt( new StringBuilder()
+                                .append(referenceNumber)
+                                .append(amount.toString())
+                                .append(payeeAccountNumber)
+                                .toString() )
+                        )
+                        .build();
+            } catch (Exception e) {
+                throw new RSAException(e.getMessage(),e);
+            }
+        } else if (transactionRequest instanceof MultipleTransactionRequest(String hostAccountNumber,
+                                                                            BigDecimal amount,
+                                                                            List<String> payeeAccountNumber,
+                                                                            String description,
+                                                                            String transactionType)) {
+            try {
+                return Transaction.builder()
+                        .referenceNumber(rsaService.encrypt(referenceNumber))
+                        .transactionDate(LocalDateTime.now())
+                        .transactionType(rsaService.encrypt(transactionType.toString()))
+                        .amount(amount)
+                        .description(description)
+                        .hmac(rsaService.encrypt(new StringBuilder()
+                                .append(referenceNumber)
+                                .append(amount.toString())
+                                .append(payeeAccountNumber)
+                                .toString())
+                        )
+                        .build();
+            } catch (Exception e) {
+                throw new RSAException(e.getMessage(), e);
+            }
+        }else {
+            throw new IllegalArgumentException("Invalid transaction request type");
+        }
     }
 
     private String generateReferenceNumber() {

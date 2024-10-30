@@ -5,16 +5,17 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import main.BankApp.dto.AccountClientView;
+import main.BankApp.dto.TransactionClientView;
 import main.BankApp.expection.AccountCreationException;
 import main.BankApp.expection.RSAException;
 import main.BankApp.model.account.Account;
 import main.BankApp.model.account.AccountStatus;
 import main.BankApp.model.account.AccountType;
-import main.BankApp.model.account.Transaction;
 import main.BankApp.repository.AccountRepository;
 import main.BankApp.model.user.UserAccount;
 import main.BankApp.repository.UserRepository;
-import main.BankApp.request.transaction.TransactionRequest;
+import main.BankApp.request.transaction.MultipleTransactionRequest;
+import main.BankApp.request.transaction.SingleTransactionRequest;
 import main.BankApp.service.rsa.RSAService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -156,10 +157,10 @@ public class AccountServiceImpl implements AccountService {
                     .accountType(AccountType.valueOf(rsaService.decrypt(account.getAccountType())))
                     .balance(rsaService.decrypt(account.getBalance()))
                     .transactionsOut(account.getTransactionsOut().stream()
-                            .map(TransactionMapper::mapTransactionToView)
+                            .map(transaction -> TransactionMapper.mapTransactionToView(transaction,rsaService))
                             .collect(Collectors.toList()) )
                     .transactionsIn( account.getTransactionsIn().stream()
-                            .map(TransactionMapper::mapTransactionToView)
+                            .map(transaction -> TransactionMapper.mapTransactionToView(transaction,rsaService))
                             .collect(Collectors.toList()) )
                     .build();
             
@@ -176,27 +177,41 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     @Transactional
-    public void makeOwnTransaction(HttpServletRequest request, TransactionRequest transactionRequest) {
+    public void makeOwnSingleTransaction(HttpServletRequest request, SingleTransactionRequest transactionRequest) {
         long userId = getUserIdFromJwt.apply(request);
-        AbstractMap.SimpleEntry<Account,Account> accountSimpleEntry = changeBalansAndGet( userId,
-                transactionRequest.accountNumber(),
+        AbstractMap.SimpleEntry<Account,Account> accountSimpleEntry = changeBalansAndGet(
+                userId,
+                transactionRequest.hostAccountNumber(),
                 transactionRequest.payeeAccountNumber(),
                 transactionRequest.amount());
         transactionService.saveTransaction(transactionRequest, accountSimpleEntry);
     }
 
     @Override
-    public void makeCountryTransaction(HttpServletRequest request, TransactionRequest transactionRequest) {
+    public void doOwnMultipleTransaction(HttpServletRequest request, MultipleTransactionRequest multipleTransactionRequest) {
+        long userId = getUserIdFromJwt.apply(request);
+        for (String payeeAccountNumber : multipleTransactionRequest.payeeAccountNumber()){
+            AbstractMap.SimpleEntry<Account,Account> accountSimpleEntry = changeBalansAndGet(
+                    userId,
+                    multipleTransactionRequest.hostAccountNumber(),
+                    payeeAccountNumber,
+                    multipleTransactionRequest.amount());
+            transactionService.saveTransaction(multipleTransactionRequest, accountSimpleEntry);
+        }
+    }
+
+    @Override
+    public void makeCountryTransaction(HttpServletRequest request, SingleTransactionRequest transactionRequest) {
 
     }
 
     @Override
-    public void makeGroupTransaction(HttpServletRequest request, List<TransactionRequest> transactionRequests) {
+    public void makeGroupTransaction(HttpServletRequest request, List<SingleTransactionRequest> transactionRequests) {
 
     }
 
     @Override
-    public Page<Transaction> getTransactions(Pageable pageable, String accountNumber, String status) {
+    public Page<TransactionClientView> getTransactions(Pageable pageable, String accountNumber, String status) {
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
         return transactionService.getTransactions(pageable,accountNumber,status);
@@ -216,7 +231,7 @@ public class AccountServiceImpl implements AccountService {
                 throw new RuntimeException("Error while updating balance", e);
             }
         }, () -> {
-            throw new EntityNotFoundException("Account with number " + accountNumber + " not found");
+            throw new EntityNotFoundException("Account with number " + accountNumber + " not found" + userId);
         });
 
         Optional<Account> accountToUpdate = accountRepository.findByAccountNumber(payeeAccountNumber);

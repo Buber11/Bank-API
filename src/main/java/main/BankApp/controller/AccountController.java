@@ -2,8 +2,9 @@ package main.BankApp.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import main.BankApp.model.account.Transaction;
-import main.BankApp.request.transaction.TransactionRequest;
+import main.BankApp.dto.TransactionClientView;
+import main.BankApp.request.transaction.MultipleTransactionRequest;
+import main.BankApp.request.transaction.SingleTransactionRequest;
 import main.BankApp.service.account.AccountService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,8 +12,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 
 @RestController
@@ -23,20 +22,20 @@ public class AccountController {
     private final AccountService accountService;
 
 
-    @PostMapping("/account")
+    @PostMapping("/accounts")
     public ResponseEntity createBankAccount(HttpServletRequest request){
        accountService.createAccount(request);
        return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/account")
+    @GetMapping("/accounts")
     public ResponseEntity getAllAccounts(HttpServletRequest request){
         var accounts = accountService.getAlAccounts(request);
         return ResponseEntity.ok(accounts);
     }
 
-    @GetMapping("account/{account-number}/transaction/{status}")
-    public ResponseEntity<Page<Transaction>> getTransaction(
+    @GetMapping("/accounts/{account-number}/transaction/{status}")
+    public ResponseEntity<Page<TransactionClientView>> getTransaction(
             @PathVariable("account-number") String accountNumber,
             @PathVariable("status") String status,
             @RequestParam(defaultValue = "0") int page,
@@ -44,13 +43,19 @@ public class AccountController {
             @RequestParam(defaultValue = "transactionDate") String sortBy) {
 
         Pageable pageable = PageRequest.of(page,size,Sort.by(sortBy));
-        Page<Transaction> pageTransaction = accountService.getTransactions(pageable,accountNumber,status);
+        Page<TransactionClientView> pageTransaction = accountService.getTransactions(pageable,accountNumber,status);
         return ResponseEntity.ok(pageTransaction);
     }
 
-    @PostMapping("/transaction")
-    public ResponseEntity doTransaction(@RequestBody TransactionRequest transactionRequest, HttpServletRequest request){
-        accountService.makeOwnTransaction(request, transactionRequest);
+    @PostMapping("/transactions")
+    public ResponseEntity doTransaction(@RequestBody SingleTransactionRequest transactionRequest, HttpServletRequest request){
+        accountService.makeOwnSingleTransaction(request, transactionRequest);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/transactions-group")
+    public ResponseEntity doTransactions(@RequestBody MultipleTransactionRequest transactionRequest, HttpServletRequest request){
+        accountService.doOwnMultipleTransaction(request,transactionRequest);
         return ResponseEntity.noContent().build();
     }
 

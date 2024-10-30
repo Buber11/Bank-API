@@ -4,6 +4,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -14,6 +15,6 @@ public class TransactionClientView {
     private BigDecimal amount;
     private String payeeAccountNumber;
     private String description;
-    private LocalDate transactionDate;
+    private LocalDateTime transactionDate;
 
 }
