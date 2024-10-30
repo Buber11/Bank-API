@@ -10,6 +10,8 @@ import main.BankApp.model.account.Transaction;
 import main.BankApp.repository.TransactionRepository;
 import main.BankApp.request.transaction.TransactionRequest;
 import main.BankApp.service.rsa.RSAService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -41,6 +43,20 @@ public class TransactionServiceImpl implements TransactionService{
 
 
     }
+
+    @Override
+    public Page<Transaction> getTransactions(Pageable pageable, String accountNumber, String status) {
+
+        if (status.equalsIgnoreCase("in")) {
+            return transactionRepository.findByPayeeAccount_AccountNumber(accountNumber, pageable);
+        } else if (status.equalsIgnoreCase("out")) {
+            return transactionRepository.findByHostAccount_AccountNumber(accountNumber, pageable);
+        } else {
+            throw new IllegalArgumentException("Invalid status: use 'in' or 'out'");
+        }
+
+    }
+
 
     private Transaction createTransaction(TransactionRequest transactionRequest) {
         String referenceNumber = generateReferenceNumber();

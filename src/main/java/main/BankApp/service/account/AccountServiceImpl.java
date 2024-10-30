@@ -4,7 +4,6 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import main.BankApp.common.Loggable;
 import main.BankApp.dto.AccountClientView;
 import main.BankApp.expection.AccountCreationException;
 import main.BankApp.expection.RSAException;
@@ -19,8 +18,11 @@ import main.BankApp.request.transaction.TransactionRequest;
 import main.BankApp.service.rsa.RSAService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
+
+import org.springframework.data.domain.Pageable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
@@ -190,6 +192,14 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public void makeGroupTransaction(HttpServletRequest request, List<TransactionRequest> transactionRequests) {
+
+    }
+
+    @Override
+    public Page<Transaction> getTransactions(Pageable pageable, String accountNumber, String status) {
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+        return transactionService.getTransactions(pageable,accountNumber,status);
 
     }
 

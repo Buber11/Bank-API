@@ -5,36 +5,53 @@ import lombok.RequiredArgsConstructor;
 import main.BankApp.model.account.Transaction;
 import main.BankApp.request.transaction.TransactionRequest;
 import main.BankApp.service.account.AccountService;
-import main.BankApp.service.account.TransactionService;
-import main.BankApp.util.ResponseUtil;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
+
 @RestController
-@RequestMapping("/api/account")
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor
 public class AccountController {
 
     private final AccountService accountService;
 
 
-    @GetMapping("/create")
+    @PostMapping("/account")
     public ResponseEntity createBankAccount(HttpServletRequest request){
        accountService.createAccount(request);
-       return ResponseUtil.buildSuccessResponse("The account was successfully created.");
+       return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/get")
+    @GetMapping("/account")
     public ResponseEntity getAllAccounts(HttpServletRequest request){
         var accounts = accountService.getAlAccounts(request);
-        return ResponseUtil.buildSuccessResponse(accounts);
+        return ResponseEntity.ok(accounts);
     }
 
+    @GetMapping("account/{account-number}/transaction/{status}")
+    public ResponseEntity<Page<Transaction>> getTransaction(
+            @PathVariable("account-number") String accountNumber,
+            @PathVariable("status") String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "transactionDate") String sortBy) {
 
-    @PostMapping("/transaction/own")
+        Pageable pageable = PageRequest.of(page,size,Sort.by(sortBy));
+        Page<Transaction> pageTransaction = accountService.getTransactions(pageable,accountNumber,status);
+        return ResponseEntity.ok(pageTransaction);
+    }
+
+    @PostMapping("/transaction")
     public ResponseEntity doTransaction(@RequestBody TransactionRequest transactionRequest, HttpServletRequest request){
         accountService.makeOwnTransaction(request, transactionRequest);
-        return ResponseUtil.buildSuccessResponse("Transaction is done");
+        return ResponseEntity.noContent().build();
     }
 
 }
