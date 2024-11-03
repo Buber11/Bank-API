@@ -34,6 +34,8 @@ public record SignupRequest(
         @Pattern(regexp = "man|woman", message = "Sex must be 'man' or 'woman'")
         String sex,
 
+        boolean isBusiness,
+
         @Pattern(regexp = "^\\d{9}$", message = "Phone number must be exactly 9 digits")
         String phoneNumber,
 

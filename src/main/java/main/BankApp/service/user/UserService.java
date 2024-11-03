@@ -1,8 +1,11 @@
 package main.BankApp.service.user;
 
 import jakarta.servlet.http.HttpServletRequest;
-import main.BankApp.dto.UserDataView;
+import main.BankApp.dto.UserModel;
+import main.BankApp.model.user.StatusAccount;
 import main.BankApp.model.user.UserAccount;
+
+import java.util.List;
 
 public interface UserService {
 
@@ -10,5 +13,11 @@ public interface UserService {
 
     UserAccount getUser(long id);
 
-    UserDataView getUserView(HttpServletRequest request);
+    UserModel getUserView(HttpServletRequest request);
+
+    List<UserModel> getUsersView(StatusAccount statusAccount);
+
+    void changeUserStatus(long userId, StatusAccount statusAccount);
+
+    void delete(long userId);
 }

@@ -9,18 +9,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor
 public class ContactController {
 
     private final ContactService contactService;
-    @PostMapping("/contact")
+
+    @PostMapping("/contacts")
     public ResponseEntity<String> save(@RequestBody ContactRequest contactRequest, HttpServletRequest request){
         contactService.save(contactRequest, request);
         return ResponseUtil.buildSuccessResponse("The Contact is sucessfuly added");
     }
 
-    @GetMapping("/contact")
+    @GetMapping("/contacts")
     public  ResponseEntity getAll(HttpServletRequest request){
         return ResponseUtil.buildSuccessResponse(
                 contactService.getAllContacts(request)

@@ -27,6 +27,7 @@ public class ContactServiceImpl implements ContactService {
     private final UserService userService;
     private final Function<HttpServletRequest,Long> getUserIdFromJwt = e -> (Long) e.getAttribute("id");
 
+    @Override
     @Loggable
     public void save(ContactRequest contactRequest, HttpServletRequest request) {
         Long userId = getUserIdFromJwt.apply(request);
@@ -65,9 +66,10 @@ public class ContactServiceImpl implements ContactService {
                 .build();
     }
     private ContactResponse createContactResponse(Contact contact) {
-        return ContactResponse.builder()
-                .name(contact.getName())
-                .numberAccount(contact.getNumberAccount())
-                .build();
+        return new ContactResponse(
+                contact.getContactId(),
+                contact.getName(),
+                contact.getNumberAccount()
+        );
     }
 }

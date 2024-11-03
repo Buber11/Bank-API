@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import main.BankApp.model.account.Account;
 import main.BankApp.model.session.ActivityLogAction;
 import main.BankApp.model.session.Session;
+import main.BankApp.model.user.Role;
 import main.BankApp.model.user.StatusAccount;
 import main.BankApp.model.user.UserAccount;
 import main.BankApp.model.user.UserPersonalData;
@@ -108,6 +109,7 @@ public class AuthServiceImpl implements AuthService {
                 .email(rsaService.encrypt(request.email()))
                 .passwordHash(passwordEncoder.encode(request.password()))
                 .status(StatusAccount.ACTIVE)
+                .role( request.isBusiness() ? Role.COMPANY : Role.CLIENT )
                 .hmac(hashingService.hash(request.username() + request.email() + StatusAccount.PENDING + "0" + "False" + "False"))
                 .build();
     }
@@ -130,7 +132,6 @@ public class AuthServiceImpl implements AuthService {
     @Loggable
     public void authenticate(LoginRequest request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
         logger.info("Attempting to authenticate user: {}", request.username());
-
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.username(), request.password())

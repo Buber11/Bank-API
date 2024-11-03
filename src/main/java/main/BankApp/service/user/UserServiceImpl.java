@@ -3,8 +3,7 @@ package main.BankApp.service.user;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import main.BankApp.common.Loggable;
-import main.BankApp.dto.UserDataView;
+import main.BankApp.dto.UserModel;
 import main.BankApp.expection.RSAException;
 import main.BankApp.model.user.StatusAccount;
 import main.BankApp.model.user.UserAccount;
@@ -17,6 +16,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @RequiredArgsConstructor
 @Service
 public class UserServiceImpl implements UserService {
@@ -27,6 +28,7 @@ public class UserServiceImpl implements UserService {
     private final RSAService rsaService;
     private final HashingService hashingService;
     private final PasswordEncoder passwordEncoder;
+    private final UserModelAssembly userModelAssembly;
 
     @Override
     public void lockAccount(UserAccount userAccount) {
@@ -43,33 +45,32 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Loggable
-    public UserDataView getUserView(HttpServletRequest request) {
+    public UserModel getUserView(HttpServletRequest request) {
         long userId = (long) request.getAttribute("id");
         UserAccount userAccount = userRepository.findById(userId)
                 .orElseThrow( EntityNotFoundException::new );
-        UserPersonalData personalData = userAccount.getUserPersonalData();
+        return userModelAssembly.toModel(userAccount);
+    }
 
-        UserDataView view = null;
-        try {
-            view = UserDataView.builder()
-                    .username( userAccount.getUsername() )
-                    .email(rsaService.decrypt(userAccount.getEmail()))
-                    .status( userAccount.getStatus() )
-                    .lastLogin( userAccount.getLastLogin() )
-                    .isBusinessAccount( userAccount.isBusinessAccount() )
-                    .twoFactorEnabled( userAccount.isTwoFactorEnabled() )
-                    .consentToCommunication( userAccount.isConsentToCommunication() )
-                    .firstName( rsaService.decrypt(personalData.getFirstName()) )
-                    .lastName( rsaService.decrypt(personalData.getLastName()) )
-                    .countryOfOrigin( rsaService.decrypt(personalData.getCountryOfOrigin()) )
-                    .phoneNumber( rsaService.decrypt(personalData.getPhoneNumber()) )
-                    .pesel( rsaService.decrypt(personalData.getPesel()) )
-                    .build();
-        } catch (Exception e) {
-            throw new RSAException(e.getMessage());
-        }
-        return view;
+    @Override
+    public List<UserModel> getUsersView(StatusAccount statusAccount) {
+        List<UserAccount> accounts = userRepository.findByStatus(statusAccount);
+        return accounts.stream()
+                .map(userModelAssembly::toModel)
+                .toList();
+    }
+
+    @Override
+    public void changeUserStatus(long userId, StatusAccount statusAccount) {
+        UserAccount userAccount = userRepository.findById(userId)
+                .orElseThrow(EntityNotFoundException::new);
+        userAccount.setStatus(statusAccount);
+        userRepository.save(userAccount);
+    }
+
+    @Override
+    public void delete(long userId) {
+        userRepository.deleteById(userId);
     }
 
 }

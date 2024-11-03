@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import main.BankApp.model.account.Account;
 import main.BankApp.model.session.Session;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
@@ -39,7 +40,9 @@ public class UserAccount implements UserDetails {
     private LocalDateTime updatedAt;
 
     private boolean consentToCommunication;
-    private boolean isBusinessAccount;
+
+    @Enumerated(EnumType.STRING)
+    private Role role;
     private String hmac;
 
 
@@ -60,7 +63,7 @@ public class UserAccount implements UserDetails {
 
 
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.toString()));
     }
 
     @Override
@@ -106,7 +109,6 @@ public class UserAccount implements UserDetails {
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
                 ", consentToCommunication=" + consentToCommunication +
-                ", isBusinessAccount=" + isBusinessAccount +
                 ", hmac='" + hmac + '\'' +
                 '}';
     }

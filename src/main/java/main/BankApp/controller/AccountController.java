@@ -2,7 +2,7 @@ package main.BankApp.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import main.BankApp.dto.TransactionClientView;
+import main.BankApp.dto.TransactionModel;
 import main.BankApp.request.transaction.MultipleTransactionRequest;
 import main.BankApp.request.transaction.SingleTransactionRequest;
 import main.BankApp.service.account.AccountService;
@@ -35,7 +35,7 @@ public class AccountController {
     }
 
     @GetMapping("/accounts/{account-number}/transaction/{status}")
-    public ResponseEntity<Page<TransactionClientView>> getTransaction(
+    public ResponseEntity<Page<TransactionModel>> getTransaction(
             @PathVariable("account-number") String accountNumber,
             @PathVariable("status") String status,
             @RequestParam(defaultValue = "0") int page,
@@ -43,7 +43,7 @@ public class AccountController {
             @RequestParam(defaultValue = "transactionDate") String sortBy) {
 
         Pageable pageable = PageRequest.of(page,size,Sort.by(sortBy));
-        Page<TransactionClientView> pageTransaction = accountService.getTransactions(pageable,accountNumber,status);
+        Page<TransactionModel> pageTransaction = accountService.getTransactions(pageable,accountNumber,status);
         return ResponseEntity.ok(pageTransaction);
     }
 

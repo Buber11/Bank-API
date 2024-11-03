@@ -58,14 +58,14 @@ public class GlobalExceptionHandler {
         return ResponseUtil.buildErrorResponse(status, errors);
     }
 
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<Object> handleRuntimeExceptions(RuntimeException ex) {
-        HttpStatus status = HttpStatus.BAD_REQUEST;
-        String message = "A runtime error occurred. Please check your request and try again.";
-
-        logger.error("Runtime exception: {} - {}", ex.getClass().getSimpleName(), ex.getMessage(), ex);
-        return ResponseUtil.buildErrorResponse(status, message);
-    }
+//    @ExceptionHandler(RuntimeException.class)
+//    public ResponseEntity<Object> handleRuntimeExceptions(RuntimeException ex) {
+//        HttpStatus status = HttpStatus.BAD_REQUEST;
+//        String message = "A runtime error occurred. Please check your request and try again.";
+//
+//        logger.error("Runtime exception: {} - {}", ex.getClass().getSimpleName(), ex.getMessage(), ex);
+//        return ResponseUtil.buildErrorResponse(status, message);
+//    }
 
     @ExceptionHandler(Throwable.class)
     public ResponseEntity<Object> handleUnhandledExceptions(Throwable ex) {

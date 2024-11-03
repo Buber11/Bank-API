@@ -4,8 +4,8 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import main.BankApp.dto.AccountClientView;
-import main.BankApp.dto.TransactionClientView;
+import main.BankApp.dto.AccountModel;
+import main.BankApp.dto.TransactionModel;
 import main.BankApp.expection.AccountCreationException;
 import main.BankApp.expection.RSAException;
 import main.BankApp.model.account.Account;
@@ -44,6 +44,7 @@ public class AccountServiceImpl implements AccountService {
     private final RSAService rsaService;
     private final UserRepository userRepository;
     private final TransactionService transactionService;
+    private final AccountModelAssembler accountModelAssembler;
 
 
     private final Function<HttpServletRequest,Long> getUserIdFromJwt = e -> (Long) e.getAttribute("id");
@@ -131,7 +132,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public List<AccountClientView> getAlAccounts(HttpServletRequest request) {
+    public List<AccountModel> getAlAccounts(HttpServletRequest request) {
         Long userId = getUserIdFromJwt.apply(request);
         if (userId == null) {
             logger.error("User ID not found in the request attributes");
@@ -145,33 +146,15 @@ public class AccountServiceImpl implements AccountService {
         }
 
         return accountList.stream()
-                .map(this::mapAccountToClientView)
+                .map(accountModelAssembler::toModel)
                 .collect(Collectors.toList());
     }
 
 
-    public AccountClientView mapAccountToClientView(Account account) {
-        try {
-            return AccountClientView.builder()
-                    .accountNumber(account.getAccountNumber())
-                    .accountType(AccountType.valueOf(rsaService.decrypt(account.getAccountType())))
-                    .balance(rsaService.decrypt(account.getBalance()))
-                    .transactionsOut(account.getTransactionsOut().stream()
-                            .map(transaction -> TransactionMapper.mapTransactionToView(transaction,rsaService))
-                            .collect(Collectors.toList()) )
-                    .transactionsIn( account.getTransactionsIn().stream()
-                            .map(transaction -> TransactionMapper.mapTransactionToView(transaction,rsaService))
-                            .collect(Collectors.toList()) )
-                    .build();
-            
-        } catch (Exception e) {
-            logger.error("Decryption error: {}", e.getMessage(), e);
-            throw new RSAException("Error while decrypting account data", e);
-        }
-    }
+
 
     @Override
-    public List<AccountClientView> getAllAccountsActive() {
+    public List<AccountModel> getAllAccountsActive() {
         return null;
     }
 
@@ -211,7 +194,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public Page<TransactionClientView> getTransactions(Pageable pageable, String accountNumber, String status) {
+    public Page<TransactionModel> getTransactions(Pageable pageable, String accountNumber, String status) {
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
         return transactionService.getTransactions(pageable,accountNumber,status);
@@ -250,9 +233,6 @@ public class AccountServiceImpl implements AccountService {
 
         return new AbstractMap.SimpleEntry(hostTransactionAccount.get(), accountToUpdate.get());
     }
-
-
-
 
 }
 

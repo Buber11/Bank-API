@@ -2,7 +2,7 @@ package main.BankApp.service.account;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import main.BankApp.dto.TransactionClientView;
+import main.BankApp.dto.TransactionModel;
 import main.BankApp.expection.RSAException;
 import main.BankApp.model.account.Account;
 import main.BankApp.model.account.Transaction;
@@ -16,7 +16,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.AbstractMap;
 import java.util.List;
@@ -29,9 +28,10 @@ public class TransactionServiceImpl implements TransactionService{
     private final TransactionRepository transactionRepository;
     private final Function<HttpServletRequest,Long> getUserIdFromJwt = e -> (Long) e.getAttribute("id");
     private final RSAService rsaService;
+    private final AccountModelAssembler accountModelAssembler;
 
     @Override
-    public List<TransactionClientView> getAllForClient(HttpServletRequest request) {
+    public List<TransactionModel> getAllForClient(HttpServletRequest request) {
         Long userId = getUserIdFromJwt.apply(request);
         return null;
     }
@@ -48,7 +48,7 @@ public class TransactionServiceImpl implements TransactionService{
     }
 
     @Override
-    public Page<TransactionClientView> getTransactions(Pageable pageable, String accountNumber, String status) {
+    public Page<TransactionModel> getTransactions(Pageable pageable, String accountNumber, String status) {
         Page<Transaction> transactions;
         if (status.equalsIgnoreCase("in")) {
             transactions = transactionRepository.findByPayeeAccount_AccountNumber(accountNumber, pageable);
@@ -57,7 +57,7 @@ public class TransactionServiceImpl implements TransactionService{
         } else {
             throw new IllegalArgumentException("Invalid status: use 'in' or 'out'");
         }
-        return transactions.map(transaction -> TransactionMapper.mapTransactionToView(transaction,rsaService));
+        return accountModelAssembler.toTransactionModelPage(transactions);
     }
 
 
