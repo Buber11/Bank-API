@@ -4,6 +4,7 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import main.BankApp.dto.UserModel;
 import main.BankApp.model.account.Account;
 import main.BankApp.model.session.ActivityLogAction;
 import main.BankApp.model.session.Session;
@@ -21,12 +22,15 @@ import main.BankApp.request.auth.SignupRequest;
 
 
 import main.BankApp.common.Loggable;
+import main.BankApp.service.googleAuthenticator.GoogleAuthService;
 import main.BankApp.service.hashing.HashingService;
 import main.BankApp.security.JwtService;
 import main.BankApp.service.rsa.RSAService;
 import main.BankApp.service.session.SessionService;
 import main.BankApp.service.account.AccountService;
 import main.BankApp.service.activityLog.ActivityLogService;
+import main.BankApp.service.user.UserModelAssembly;
+import org.apache.catalina.User;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -58,12 +62,14 @@ public class AuthServiceImpl implements AuthService {
     private final SessionService sessionService;
     private final ActivityLogService activityLogService;
     private final AccountService accountService;
+    private final UserModelAssembly userModelAssembly;
+    private final GoogleAuthService googleAuthService;
 
     @Override
     @Loggable
-    public void signup(SignupRequest request) {
+    public String signup(SignupRequest request) {
         logger.info("Attempting to sign up user: {}", request.username());
-
+        String barCodeUrl;
         if (isPeselAlreadyExists(request.pesel())) {
             logger.warn("Pesel already exists");
             throw new DuplicateException("This Pesel has already existed");
@@ -82,14 +88,22 @@ public class AuthServiceImpl implements AuthService {
 
             Account account = accountService.createAccount(newUserAccount);
             newUserAccount.setAccounts(List.of(account));
+
+            barCodeUrl = googleAuthService.getGoogleAuthenticatorBarCode(newUserAccount.getGoogleSecret(),
+                    newUserAccount.getUsername(),
+                    "Liberty Bank");
+
             userRepository.save(newUserAccount);
 
             logger.info("User {} successfully signed up", request.username());
+
+
 
         } catch (Exception e) {
             logger.error("An error occurred during signup for user: {}", request.username(), e);
             throw new RSAException("An unexpected error occurred during encryption.", e);
         }
+        return barCodeUrl;
     }
 
     private boolean isPeselAlreadyExists(String pesel) {
@@ -110,6 +124,7 @@ public class AuthServiceImpl implements AuthService {
                 .passwordHash(passwordEncoder.encode(request.password()))
                 .status(StatusAccount.ACTIVE)
                 .role( request.isBusiness() ? Role.COMPANY : Role.CLIENT )
+                .googleSecret( googleAuthService.generateSecretKey() )
                 .hmac(hashingService.hash(request.username() + request.email() + StatusAccount.PENDING + "0" + "False" + "False"))
                 .build();
     }
@@ -130,15 +145,24 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Loggable
-    public void authenticate(LoginRequest request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+    public UserModel authenticate(LoginRequest request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
         logger.info("Attempting to authenticate user: {}", request.username());
+        UserAccount user;
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.username(), request.password())
             );
 
-            UserAccount user = userRepository.findByUsername(request.username())
+            user = userRepository.findByUsername(request.username())
                     .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+            String secretKey = user.getGoogleSecret(); // Pobierz klucz TOTP z konta użytkownika
+            String expectedCode = googleAuthService.getTOTPCode(secretKey); // Generuj kod na podstawie klucza
+
+            if (!request.code().equals(expectedCode)) {
+                logger.warn("Invalid TOTP code for user: {}", request.username());
+                throw new AuthenticationException("Invalid TOTP code") {};
+            }
 
             sessionService.invalidateSession(user.getUserId());
 
@@ -159,6 +183,8 @@ public class AuthServiceImpl implements AuthService {
             logger.error("Authentication error for user: {}", request.username(), e);
             throw e;
         }
+
+        return userModelAssembly.toModelAuthenticate(user);
     }
 
     private void addJwtCookieToResponse(UserAccount user, HttpServletResponse response) {

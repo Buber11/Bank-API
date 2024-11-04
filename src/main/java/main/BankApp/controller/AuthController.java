@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import main.BankApp.dto.UserModel;
 import main.BankApp.service.auth.AuthService;
 import main.BankApp.request.auth.LoginRequest;
 import main.BankApp.request.auth.SignupRequest;
@@ -20,14 +21,20 @@ public class AuthController {
 
     @PostMapping("/signup")
     public ResponseEntity<String> signup(@Valid @RequestBody SignupRequest signupRequest) {
-        authService.signup(signupRequest);
-        return ResponseUtil.buildSuccessResponse("User registered successfully.");
+        String barCodeUrl = authService.signup(signupRequest);
+        return ResponseUtil.buildSuccessResponse(barCodeUrl);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest request,HttpServletRequest httpServletRequest, HttpServletResponse response){
-        authService.authenticate(request, httpServletRequest ,response);
-        return ResponseUtil.buildSuccessResponse("Authentication successful");
+    public ResponseEntity<?> login(@RequestBody LoginRequest request,HttpServletRequest httpServletRequest, HttpServletResponse response){
+        UserModel userModel = authService.authenticate(request, httpServletRequest ,response);
+        return ResponseEntity.ok(userModel);
+    }
+
+    @PostMapping("/verify")
+    public ResponseEntity verify(){
+
+        return null;
     }
 
     @GetMapping("/refresh-token")

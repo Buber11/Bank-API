@@ -23,11 +23,15 @@ public class UserController {
     }
 
     @GetMapping("/users")
-    public ResponseEntity getUsers(
-            @RequestParam(defaultValue = "ACTIVE",name = "st") StatusAccount statusAccount
-    ){
-      var accounts = userService.getUsersView(statusAccount);
-      return ResponseEntity.ok(accounts);
+    public ResponseEntity<?> getUsers(
+            @RequestParam(required = false, name = "st") StatusAccount statusAccount
+    ) {
+
+        var accounts = (statusAccount == null) ?
+                userService.getAllUsers() :
+                userService.getUsersView(statusAccount);
+
+        return ResponseEntity.ok(accounts);
     }
 
     @PatchMapping("/users/{id}/{status}")
@@ -37,7 +41,7 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("users/{id}")
+    @DeleteMapping("users/{userId}")
     public ResponseEntity deleteUser(@PathVariable long userId){
         userService.delete(userId);
         return ResponseEntity.noContent().build();

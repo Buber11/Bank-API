@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import main.BankApp.dto.UserModel;
 import main.BankApp.model.user.StatusAccount;
 import main.BankApp.model.user.UserAccount;
+import org.apache.catalina.User;
 
 import java.util.List;
 
@@ -16,6 +17,8 @@ public interface UserService {
     UserModel getUserView(HttpServletRequest request);
 
     List<UserModel> getUsersView(StatusAccount statusAccount);
+
+    List<UserModel> getAllUsers();
 
     void changeUserStatus(long userId, StatusAccount statusAccount);
 

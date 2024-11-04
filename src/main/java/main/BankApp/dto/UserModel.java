@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import main.BankApp.model.user.Role;
 import main.BankApp.model.user.StatusAccount;
 import org.springframework.hateoas.RepresentationModel;
 import org.springframework.hateoas.server.core.Relation;
@@ -28,6 +29,8 @@ public class UserModel extends RepresentationModel<UserModel> {
     private LocalDateTime lastLogin;
     private boolean twoFactorEnabled;
     private boolean consentToCommunication;
+    private Role role;
+    private String qRcode;
 
     private String firstName;
     private String lastName;

@@ -33,7 +33,7 @@ public class Session {
     @JsonIgnore
     private UserAccount userAccount;
 
-    @OneToMany(mappedBy = "session")
+    @OneToMany(mappedBy = "session", cascade = CascadeType.ALL)
     private List<ActivityLog> activityLogs;
 
 }

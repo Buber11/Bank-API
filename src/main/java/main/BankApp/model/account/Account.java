@@ -48,7 +48,7 @@ public class Account {
     @OneToMany(mappedBy = "hostAccount", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Transaction> transactionsOut;
 
-    @OneToMany(mappedBy = "payeeAccount")
+    @OneToMany(mappedBy = "payeeAccount", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Transaction> transactionsIn;
 
 

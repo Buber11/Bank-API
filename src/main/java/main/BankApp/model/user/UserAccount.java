@@ -43,6 +43,10 @@ public class UserAccount implements UserDetails {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    @Column(name = "google_secret")
+    private String googleSecret;
+
     private String hmac;
 
 

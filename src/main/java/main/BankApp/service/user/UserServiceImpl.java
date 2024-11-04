@@ -61,6 +61,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public List<UserModel> getAllUsers() {
+        List<UserAccount> accounts = userRepository.findAll();
+        return accounts.stream()
+                .map(userModelAssembly::toModel)
+                .toList();
+    }
+
+    @Override
     public void changeUserStatus(long userId, StatusAccount statusAccount) {
         UserAccount userAccount = userRepository.findById(userId)
                 .orElseThrow(EntityNotFoundException::new);
