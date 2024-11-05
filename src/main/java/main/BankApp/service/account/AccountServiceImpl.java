@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import main.BankApp.dto.AccountModel;
 import main.BankApp.dto.TransactionModel;
 import main.BankApp.expection.AccountCreationException;
+import main.BankApp.expection.BalanceUpdateException;
 import main.BankApp.expection.RSAException;
 import main.BankApp.model.account.Account;
 import main.BankApp.model.account.AccountStatus;
@@ -36,7 +37,6 @@ import java.util.stream.Collectors;
 public class AccountServiceImpl implements AccountService {
 
     private static final Logger logger = LoggerFactory.getLogger(AccountServiceImpl.class);
-
     private final String BANK_CODE = "6666";
     private final String COUNTRY_CODE_NUMERIC = "2521";
     private final String COUNTRY_CODE = "PL";
@@ -46,20 +46,15 @@ public class AccountServiceImpl implements AccountService {
     private final TransactionService transactionService;
     private final AccountModelAssembler accountModelAssembler;
 
-
-    private final Function<HttpServletRequest,Long> getUserIdFromJwt = e -> (Long) e.getAttribute("id");
+    private final Function<HttpServletRequest, Long> getUserIdFromJwt = e -> (Long) e.getAttribute("id");
 
     public String generateBankAccountNumber() {
         logger.info("Generating bank account number...");
-
         String clientAccountNumber = generateRandomClientAccountNumber();
-
         String partialAccountNumber = BANK_CODE + "6666" + clientAccountNumber;
-
         String controlSum = calculateControlSum(partialAccountNumber);
-
         String fullAccountNumber = controlSum + partialAccountNumber;
-
+        logger.info("Generated bank account number: {}", fullAccountNumber);
         return fullAccountNumber;
     }
 
@@ -69,20 +64,18 @@ public class AccountServiceImpl implements AccountService {
         for (int i = 0; i < 16; i++) {
             clientAccountNumber.append(random.nextInt(10));
         }
+        logger.debug("Generated random client account number: {}", clientAccountNumber);
         return clientAccountNumber.toString();
     }
 
     private String calculateControlSum(String partialAccountNumber) {
+        logger.debug("Calculating control sum for partial account number: {}", partialAccountNumber);
         String ibanWithoutControlSum = COUNTRY_CODE + "00" + partialAccountNumber;
-
         String shiftedIban = partialAccountNumber + COUNTRY_CODE_NUMERIC + "00";
-
         BigInteger numericIban = new BigInteger(shiftedIban);
-
         int mod = numericIban.mod(BigInteger.valueOf(97)).intValue();
-
         int controlSum = 98 - mod;
-
+        logger.debug("Calculated control sum: {}", controlSum);
         return String.format("%02d", controlSum);
     }
 
@@ -99,7 +92,7 @@ public class AccountServiceImpl implements AccountService {
                     .accountType(rsaService.encrypt(AccountType.PERSONAL.toString()))
                     .build();
             logger.info("Account successfully created for User ID: {}", user.getUserId());
-            return account;
+            return accountRepository.save(account);
         } catch (RSAException e) {
             logger.error("Encryption error while creating account for User ID: {}", user.getUserId(), e);
             throw new AccountCreationException("Error encrypting account data", e);
@@ -112,6 +105,7 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public void createAccount(HttpServletRequest request) {
         Long userId = getUserIdFromJwt.apply(request);
+        logger.debug("Request to create account for user ID: {}", userId);
         Optional<UserAccount> userAccountOpt = userRepository.findById(userId);
 
         if (userAccountOpt.isEmpty()) {
@@ -120,10 +114,8 @@ public class AccountServiceImpl implements AccountService {
         }
 
         UserAccount userAccount = userAccountOpt.get();
-
         try {
             Account newAccount = createAccount(userAccount);
-            accountRepository.save(newAccount);
             logger.info("Account successfully saved for User ID: {}", userId);
         } catch (Exception e) {
             logger.error("Failed to save account for User ID: {}", userId, e);
@@ -139,82 +131,97 @@ public class AccountServiceImpl implements AccountService {
             throw new IllegalArgumentException("User ID is required");
         }
 
+        logger.debug("Fetching accounts for user ID: {}", userId);
         List<Account> accountList = accountRepository.findByUserAccount_UserId(userId);
         if (accountList.isEmpty()) {
             logger.warn("No accounts found for user ID: {}", userId);
             return Collections.emptyList();
         }
 
+        logger.info("Accounts found for user ID: {}", userId);
         return accountList.stream()
                 .map(accountModelAssembler::toModel)
                 .collect(Collectors.toList());
     }
 
-
-
-
     @Override
     public List<AccountModel> getAllAccountsActive() {
-        return null;
+        logger.debug("Fetching all active accounts.");
+        List<Account> activeAccounts = accountRepository.findByAccountStatus(AccountStatus.ACTIVE);
+        logger.info("Number of active accounts found: {}", activeAccounts.size());
+        return activeAccounts.stream()
+                .map(accountModelAssembler::toModel)
+                .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
     public void makeOwnSingleTransaction(HttpServletRequest request, SingleTransactionRequest transactionRequest) {
         long userId = getUserIdFromJwt.apply(request);
-        AbstractMap.SimpleEntry<Account,Account> accountSimpleEntry = changeBalansAndGet(
+        logger.info("Making single transaction for user ID: {}", userId);
+        AbstractMap.SimpleEntry<Account, Account> accountSimpleEntry = changeBalansAndGet(
                 userId,
                 transactionRequest.hostAccountNumber(),
                 transactionRequest.payeeAccountNumber(),
                 transactionRequest.amount());
         transactionService.saveTransaction(transactionRequest, accountSimpleEntry);
+        logger.info("Single transaction made from account: {} to account: {}", transactionRequest.hostAccountNumber(), transactionRequest.payeeAccountNumber());
     }
 
     @Override
     public void doOwnMultipleTransaction(HttpServletRequest request, MultipleTransactionRequest multipleTransactionRequest) {
         long userId = getUserIdFromJwt.apply(request);
-        for (String payeeAccountNumber : multipleTransactionRequest.payeeAccountNumber()){
-            AbstractMap.SimpleEntry<Account,Account> accountSimpleEntry = changeBalansAndGet(
+        logger.info("Making multiple transactions for user ID: {}", userId);
+        for (String payeeAccountNumber : multipleTransactionRequest.payeeAccountNumber()) {
+            AbstractMap.SimpleEntry<Account, Account> accountSimpleEntry = changeBalansAndGet(
                     userId,
                     multipleTransactionRequest.hostAccountNumber(),
                     payeeAccountNumber,
                     multipleTransactionRequest.amount());
             transactionService.saveTransaction(multipleTransactionRequest, accountSimpleEntry);
+            logger.info("Multiple transaction made from account: {} to account: {}", multipleTransactionRequest.hostAccountNumber(), payeeAccountNumber);
         }
     }
 
     @Override
     public void makeCountryTransaction(HttpServletRequest request, SingleTransactionRequest transactionRequest) {
-
+        // Implementation for making country transactions
     }
 
     @Override
     public void makeGroupTransaction(HttpServletRequest request, List<SingleTransactionRequest> transactionRequests) {
-
+        // Implementation for group transactions
     }
 
     @Override
     public Page<TransactionModel> getTransactions(Pageable pageable, String accountNumber, String status) {
+        logger.debug("Fetching transactions for account number: {} with status: {}", accountNumber, status);
         Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
-        return transactionService.getTransactions(pageable,accountNumber,status);
-
+        return transactionService.getTransactions(pageable, accountNumber, status);
     }
 
-
-    private AbstractMap.SimpleEntry<Account,Account> changeBalansAndGet(long userId, String accountNumber, String payeeAccountNumber, BigDecimal value) {
+    private AbstractMap.SimpleEntry<Account, Account> changeBalansAndGet(long userId, String accountNumber, String payeeAccountNumber, BigDecimal value) {
+        logger.debug("Changing balance for user ID: {}, host account: {}, payee account: {}, amount: {}", userId, accountNumber, payeeAccountNumber, value);
         Optional<Account> hostTransactionAccount = accountRepository.findByAccountNumberAndUserAccount_UserId(accountNumber, userId);
-        hostTransactionAccount.ifPresentOrElse( account -> {
+        hostTransactionAccount.ifPresentOrElse(account -> {
             try {
                 BigDecimal balans = new BigDecimal(rsaService.decrypt(account.getBalance()));
+                if (balans.compareTo(value) < 0) {
+                    logger.warn("Insufficient funds for account: {}. Current balance: {}, attempted deduction: {}", accountNumber, balans, value);
+                    throw new BalanceUpdateException("Insufficient funds for account: " + accountNumber);
+                }
                 balans = balans.subtract(value);
                 account.setBalance(rsaService.encrypt(balans.toString()));
                 accountRepository.save(account);
+                logger.info("Balance updated for account: {}. New balance: {}", accountNumber, balans);
             } catch (Exception e) {
-                throw new RuntimeException("Error while updating balance", e);
+                logger.error("Error while updating balance for account: {}", accountNumber, e);
+                throw new BalanceUpdateException("Error while updating balance", e);
             }
         }, () -> {
-            throw new EntityNotFoundException("Account with number " + accountNumber + " not found" + userId);
+            logger.error("Host account with number {} not found for user ID: {}", accountNumber, userId);
+            throw new EntityNotFoundException("Account with number " + accountNumber + " not found for user ID: " + userId);
         });
 
         Optional<Account> accountToUpdate = accountRepository.findByAccountNumber(payeeAccountNumber);
@@ -224,15 +231,16 @@ public class AccountServiceImpl implements AccountService {
                 balans = balans.add(value);
                 account.setBalance(rsaService.encrypt(balans.toString()));
                 accountRepository.save(account);
+                logger.info("Balance updated for payee account: {}. New balance: {}", payeeAccountNumber, balans);
             } catch (Exception e) {
-                throw new RuntimeException("Error while updating balance", e);
+                logger.error("Error while updating balance for payee account: {}", payeeAccountNumber, e);
+                throw new BalanceUpdateException("Error while updating balance", e);
             }
         }, () -> {
-            throw new EntityNotFoundException("Account with number " + accountNumber + " not found");
+            logger.error("Payee account with number {} not found", payeeAccountNumber);
+            throw new EntityNotFoundException("Account with number " + payeeAccountNumber + " not found");
         });
 
-        return new AbstractMap.SimpleEntry(hostTransactionAccount.get(), accountToUpdate.get());
+        return new AbstractMap.SimpleEntry<>(hostTransactionAccount.get(), accountToUpdate.get());
     }
-
 }
-

@@ -4,7 +4,11 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import main.BankApp.common.Loggable;
 import main.BankApp.dto.UserModel;
+import main.BankApp.expection.DuplicateException;
+import main.BankApp.expection.RSAException;
 import main.BankApp.model.account.Account;
 import main.BankApp.model.session.ActivityLogAction;
 import main.BankApp.model.session.Session;
@@ -12,25 +16,20 @@ import main.BankApp.model.user.Role;
 import main.BankApp.model.user.StatusAccount;
 import main.BankApp.model.user.UserAccount;
 import main.BankApp.model.user.UserPersonalData;
-import main.BankApp.request.auth.LoginRequest;
-import main.BankApp.expection.DuplicateException;
-
-import main.BankApp.expection.RSAException;
 import main.BankApp.repository.UserPersonalDataRepository;
 import main.BankApp.repository.UserRepository;
+import main.BankApp.request.auth.LoginRequest;
 import main.BankApp.request.auth.SignupRequest;
-
-
-import main.BankApp.common.Loggable;
-import main.BankApp.service.googleAuthenticator.GoogleAuthService;
-import main.BankApp.service.hashing.HashingService;
 import main.BankApp.security.JwtService;
-import main.BankApp.service.rsa.RSAService;
-import main.BankApp.service.session.SessionService;
 import main.BankApp.service.account.AccountService;
 import main.BankApp.service.activityLog.ActivityLogService;
+import main.BankApp.service.googleAuthenticator.GoogleAuthService;
+import main.BankApp.service.hashing.HashingService;
+import main.BankApp.service.rsa.RSAService;
+import main.BankApp.service.session.SessionService;
 import main.BankApp.service.user.UserModelAssembly;
-import org.apache.catalina.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -41,10 +40,6 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Service
 @RequiredArgsConstructor
@@ -68,69 +63,56 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Loggable
     public String signup(SignupRequest request) {
-        logger.info("Attempting to sign up user: {}", request.username());
-        String barCodeUrl;
-        if (isPeselAlreadyExists(request.pesel())) {
-            logger.warn("Pesel already exists");
-            throw new DuplicateException("This Pesel has already existed");
+        logger.info("Signing up user: {}", request.username());
+
+        if (isDuplicatePesel(request.pesel())) {
+            throw new DuplicateException("Pesel already exists.");
         }
         if (userRepository.existsByUsername(request.username())) {
-            logger.warn("Username already exists: {}", request.username());
-            throw new DuplicateException("This Username has already existed");
+            throw new DuplicateException("Username already exists.");
         }
 
         try {
-            UserAccount newUserAccount = buildUserAccount(request);
-            UserPersonalData newUserPersonalData = buildUserPersonalData(request);
-
-            newUserAccount.setUserPersonalData(newUserPersonalData);
-            newUserPersonalData.setUserAccount(newUserAccount);
-
+            UserAccount newUserAccount = createUserAccount(request);
             Account account = accountService.createAccount(newUserAccount);
             newUserAccount.setAccounts(List.of(account));
-
-            barCodeUrl = googleAuthService.getGoogleAuthenticatorBarCode(newUserAccount.getGoogleSecret(),
-                    newUserAccount.getUsername(),
-                    "Liberty Bank");
-
             userRepository.save(newUserAccount);
 
-            logger.info("User {} successfully signed up", request.username());
-
-
-
+            logger.info("User {} signed up successfully", request.username());
+            return googleAuthService.getGoogleAuthenticatorBarCode(newUserAccount.getGoogleSecret(),
+                    newUserAccount.getUsername(), "Liberty Bank");
         } catch (Exception e) {
-            logger.error("An error occurred during signup for user: {}", request.username(), e);
-            throw new RSAException("An unexpected error occurred during encryption.", e);
+            logger.error("Error signing up user: {}", request.username(), e);
+            throw new RSAException("Unexpected encryption error.", e);
         }
-        return barCodeUrl;
     }
 
-    private boolean isPeselAlreadyExists(String pesel) {
-        List<String> hashedPeselList = userPersonalDataRepository.findAllPeselHash();
-        for (String hashedPesel : hashedPeselList) {
-            if (hashingService.matches(pesel, hashedPesel)) {
-                return true;
-            }
-        }
-        return false;
+    private boolean isDuplicatePesel(String pesel) {
+        return userPersonalDataRepository.findAllPeselHash().stream()
+                .anyMatch(hashedPesel -> hashingService.matches(pesel, hashedPesel));
     }
 
-    private UserAccount buildUserAccount(SignupRequest request) throws Exception {
-        logger.debug("Building user account for username: {}", request.username());
-        return UserAccount.builder()
+    private UserAccount createUserAccount(SignupRequest request) throws Exception {
+        logger.debug("Creating user account for username: {}", request.username());
+
+        UserPersonalData userPersonalData = createUserPersonalData(request);
+        UserAccount userAccount = UserAccount.builder()
                 .username(request.username())
                 .email(rsaService.encrypt(request.email()))
                 .passwordHash(passwordEncoder.encode(request.password()))
                 .status(StatusAccount.ACTIVE)
-                .role( request.isBusiness() ? Role.COMPANY : Role.CLIENT )
-                .googleSecret( googleAuthService.generateSecretKey() )
-                .hmac(hashingService.hash(request.username() + request.email() + StatusAccount.PENDING + "0" + "False" + "False"))
+                .role(request.isBusiness() ? Role.COMPANY : Role.CLIENT)
+                .googleSecret(googleAuthService.generateSecretKey())
+                .hmac(hashingService.hash(generateUserHmacContent(request)))
                 .build();
+
+        userAccount.setUserPersonalData(userPersonalData);
+        userPersonalData.setUserAccount(userAccount);
+
+        return userAccount;
     }
 
-    private UserPersonalData buildUserPersonalData(SignupRequest request) throws Exception {
-        logger.debug("Building personal data for user: {}", request.username());
+    private UserPersonalData createUserPersonalData(SignupRequest request) throws Exception {
         return UserPersonalData.builder()
                 .firstName(rsaService.encrypt(request.firstName()))
                 .lastName(rsaService.encrypt(request.lastName()))
@@ -139,52 +121,61 @@ public class AuthServiceImpl implements AuthService {
                 .idCardNumber(rsaService.encrypt("0"))
                 .phoneNumber(rsaService.encrypt(request.phoneNumber()))
                 .countryOfOrigin(rsaService.encrypt(request.countryOfOrigin()))
-                .hmac(hashingService.hash(request.firstName() + request.lastName() + request.pesel() + request.phoneNumber() + request.countryOfOrigin()))
+                .hmac(hashingService.hash(generatePersonalDataHmacContent(request)))
                 .build();
+    }
+
+    private String generateUserHmacContent(SignupRequest request) {
+        return request.username() + request.email() + StatusAccount.PENDING + "0" + "False" + "False";
+    }
+
+    private String generatePersonalDataHmacContent(SignupRequest request) {
+        return request.firstName() + request.lastName() + request.pesel() + request.phoneNumber() + request.countryOfOrigin();
     }
 
     @Override
     @Loggable
     public UserModel authenticate(LoginRequest request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
-        logger.info("Attempting to authenticate user: {}", request.username());
-        UserAccount user;
-        try {
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.username(), request.password())
-            );
+        logger.info("Authenticating user: {}", request.username());
 
-            user = userRepository.findByUsername(request.username())
-                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        UserAccount user = userRepository.findByUsername(request.username())
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
-            String secretKey = user.getGoogleSecret(); // Pobierz klucz TOTP z konta użytkownika
-            String expectedCode = googleAuthService.getTOTPCode(secretKey); // Generuj kod na podstawie klucza
+        authenticateUser(request, user);
+        validateTotpCode(request, user);
 
-            if (!request.code().equals(expectedCode)) {
-                logger.warn("Invalid TOTP code for user: {}", request.username());
-                throw new AuthenticationException("Invalid TOTP code") {};
-            }
+        sessionService.invalidateSession(user.getUserId());
+        addJwtCookieToResponse(user, httpServletResponse);
 
-            sessionService.invalidateSession(user.getUserId());
+        Session session = createSession(user, httpServletRequest);
+        activityLogService.createLog(session, ActivityLogAction.LOGIN);
 
-            addJwtCookieToResponse(user, httpServletResponse);
-
-            String ipAddress = sessionService.getClientIp(httpServletRequest);
-            String userAgent = sessionService.getUserAgent(httpServletRequest);
-
-            Session session = createSession(user, ipAddress, userAgent);
-            createLog(session, ActivityLogAction.LOGIN);
-
-            logger.info("User {} successfully authenticated", request.username());
-
-        } catch (BadCredentialsException e) {
-            logger.warn("Invalid login attempt for user: {}", request.username());
-            throw new AuthenticationException("Invalid username or password") {};
-        } catch (AuthenticationException e) {
-            logger.error("Authentication error for user: {}", request.username(), e);
-            throw e;
-        }
-
+        logger.info("User {} authenticated successfully", request.username());
         return userModelAssembly.toModelAuthenticate(user);
+    }
+
+    private void authenticateUser(LoginRequest request, UserAccount user) {
+        try {
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.username(), request.password()));
+        } catch (BadCredentialsException e) {
+            handleFailedLoginAttempt(user);
+            throw new AuthenticationException("Invalid username or password") {};
+        }
+    }
+
+    private void validateTotpCode(LoginRequest request, UserAccount user) {
+        String expectedCode = googleAuthService.getTOTPCode(user.getGoogleSecret());
+        if (!request.code().equals(expectedCode)) {
+            throw new AuthenticationException("Invalid TOTP code") {};
+        }
+    }
+
+    private void handleFailedLoginAttempt(UserAccount user) {
+        logger.warn("Invalid login attempt for user: {}", user.getUsername());
+        user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
+        if (user.getFailedLoginAttempts() >= 3) {
+            user.setStatus(StatusAccount.LOCKED);
+        }
     }
 
     private void addJwtCookieToResponse(UserAccount user, HttpServletResponse response) {
@@ -193,35 +184,27 @@ public class AuthServiceImpl implements AuthService {
         response.addCookie(cookie);
     }
 
-    private Session createSession(UserAccount userAccount, String ipAddress, String userAgent) {
-        logger.debug("Creating session for user ID: {}", userAccount.getUserId());
+    private Session createSession(UserAccount userAccount, HttpServletRequest request) {
+        String ipAddress = sessionService.getClientIp(request);
+        String userAgent = sessionService.getUserAgent(request);
         return sessionService.createSession(userAccount, ipAddress, userAgent);
-    }
-
-    private void createLog(Session session, ActivityLogAction action) {
-        logger.debug("Creating activity log for session ID: {} with action: {}", session.getSessionId(), action);
-        activityLogService.createLog(session, action);
     }
 
     @Override
     @Loggable
     public void refreshToken(HttpServletRequest request, HttpServletResponse response) {
         long userId = (long) request.getAttribute("id");
-        logger.info("Refreshing token for user with ID: {}", userId);
-
         UserAccount user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User account with ID " + userId + " does not exist"));
 
         addJwtCookieToResponse(user, response);
-
-        logger.info("Token successfully refreshed for user ID: {}", userId);
+        logger.info("Token refreshed for user ID: {}", userId);
     }
 
     @Override
     @Loggable
     public void logout(HttpServletRequest request) {
         String sessionId = (String) request.getAttribute("session_id");
-        logger.info("User with session ID: {} is logging out", sessionId);
         sessionService.invalidateSession(sessionId);
         logger.info("Session ID: {} invalidated", sessionId);
     }
@@ -229,10 +212,11 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void deactivate(HttpServletRequest request) {
         long userId = (long) request.getAttribute("id");
-        Optional<UserAccount> userAccount = userRepository.findById(userId);
-        userAccount.ifPresentOrElse(user -> {
+        userRepository.findById(userId).ifPresentOrElse(user -> {
             user.setStatus(StatusAccount.INACTIVE);
             userRepository.save(user);
-        }, EntityNotFoundException::new);
+        }, () -> {
+            throw new EntityNotFoundException("User account with ID " + userId + " does not exist");
+        });
     }
 }

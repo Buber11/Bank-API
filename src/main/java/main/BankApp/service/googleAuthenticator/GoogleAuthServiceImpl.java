@@ -25,29 +25,39 @@ public class GoogleAuthServiceImpl implements GoogleAuthService {
     private final SecureRandom random;
     private final Base32 base32;
 
+    @Override
     public String generateSecretKey() {
         byte[] bytes = new byte[20];
         random.nextBytes(bytes);
-        Base32 base32 = new Base32();
         return base32.encodeToString(bytes);
     }
 
+    @Override
     public String getTOTPCode(String secretKey) {
         byte[] bytes = base32.decode(secretKey);
         String hexKey = Hex.encodeHexString(bytes);
         return TOTP.getOTP(hexKey);
     }
 
+    @Override
     public String getGoogleAuthenticatorBarCode(String secretKey, String account, String issuer) {
         try {
-            return "otpauth://totp/"
-                    + URLEncoder.encode(issuer + ":" + account, "UTF-8").replace("+", "%20")
-                    + "?secret=" + URLEncoder.encode(secretKey, "UTF-8").replace("+", "%20")
-                    + "&issuer=" + URLEncoder.encode(issuer, "UTF-8").replace("+", "%20");
+            return buildBarCodeUri(secretKey, account, issuer);
         } catch (UnsupportedEncodingException e) {
-            throw new IllegalStateException(e);
+            throw new IllegalStateException("Error encoding Google Authenticator URI", e);
         }
     }
 
+    private String buildBarCodeUri(String secretKey, String account, String issuer) throws UnsupportedEncodingException {
+        String encodedAccountInfo = encodeValue(issuer + ":" + account);
+        String encodedSecret = encodeValue(secretKey);
+        String encodedIssuer = encodeValue(issuer);
 
+        return String.format("otpauth://totp/%s?secret=%s&issuer=%s",
+                encodedAccountInfo, encodedSecret, encodedIssuer);
+    }
+
+    private String encodeValue(String value) throws UnsupportedEncodingException {
+        return URLEncoder.encode(value, "UTF-8").replace("+", "%20");
+    }
 }

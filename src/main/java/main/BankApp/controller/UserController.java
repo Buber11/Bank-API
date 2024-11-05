@@ -34,7 +34,7 @@ public class UserController {
         return ResponseEntity.ok(accounts);
     }
 
-    @PatchMapping("/users/{id}/{status}")
+    @PutMapping("/users/{id}/{status}")
     public ResponseEntity changeUserStatus(@PathVariable("id") long userId,
                                            @PathVariable("status") StatusAccount statusAccount){
         userService.changeUserStatus(userId,statusAccount);

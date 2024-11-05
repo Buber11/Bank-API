@@ -2,6 +2,7 @@ package main.BankApp.service.session;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import main.BankApp.expection.SessionNotFoundException;
 import main.BankApp.model.session.Session;
 import main.BankApp.model.user.UserAccount;
 import main.BankApp.repository.SessionRepository;
@@ -30,6 +31,7 @@ public class SessionServiceImpl implements SessionService {
     private final HashingService hashingService;
     private final UserService userService;
 
+    @Override
     public Session createSession(UserAccount userAccount, String ipAddress, String userAgent) {
         String sessionId = generateSessionId();
         LocalDateTime createdAt = LocalDateTime.now();
@@ -49,24 +51,21 @@ public class SessionServiceImpl implements SessionService {
                 .hmac(hmac)
                 .build();
 
-        logger.info("Creating session for user ID: {} with session ID: {}", userAccount.getUserId(), sessionId);
+        logger.info("Creating session for user ID: {}", userAccount.getUserId());
         return sessionRepository.save(session);
     }
 
+    @Override
     public void invalidateSession(String sessionId) {
-        logger.info("Invalidating session with ID: {}", sessionId);
-        Optional<Session> sessionOptional = sessionRepository.findBySessionId(sessionId);
-        sessionOptional.ifPresent(session -> {
-            session.setActive(false);
-            sessionRepository.save(session);
-            logger.info("Session with ID: {} has been invalidated", sessionId);
-        });
+        updateSessionStatus(sessionId, false);
     }
 
+    @Override
     public boolean isSessionActive(String sessionId) {
-        logger.info("Checking if session with ID: {} is active", sessionId);
-        Optional<Session> sessionOptional = sessionRepository.findBySessionId(sessionId);
-        return sessionOptional.map(Session::isActive).orElse(false);
+        logger.debug("Checking if session with ID: {} is active", sessionId);
+        return sessionRepository.findBySessionId(sessionId)
+                .map(Session::isActive)
+                .orElse(false);
     }
 
     @Override
@@ -74,84 +73,68 @@ public class SessionServiceImpl implements SessionService {
     public void invalidateExpiredSessions() {
         logger.info("Scheduled task started to invalidate expired sessions.");
         LocalDateTime now = LocalDateTime.now();
-        List<Session> sessions = sessionRepository.findByIsActive(true);
 
-        for (Session session : sessions) {
-            if (!checkHmac(session)) {
-                logger.warn("Session with ID: {} has invalid HMAC, invalidating session", session.getSessionId());
-                session.setActive(false);
-                sessionRepository.save(session);
-                UserAccount userAccount = session.getUserAccount();
-                userService.lockAccount(userAccount);
-                logger.warn("Session with ID: {} has been invalidated due to invalid HMAC", session.getSessionId());
-            } else if (session.getExpiresAt().isBefore(now)) {
-                logger.warn("Session with ID: {} has expired, invalidating session", session.getSessionId());
-                session.setActive(false);
-                sessionRepository.save(session);
-                logger.warn("Session with ID: {} has been invalidated due to expiration", session.getSessionId());
-            }
-        }
+        List<Session> activeSessions = sessionRepository.findByIsActive(true);
+        activeSessions.stream()
+                .filter(session -> !checkHmac(session) || session.getExpiresAt().isBefore(now))
+                .forEach(session -> {
+                    session.setActive(false);
+                    sessionRepository.save(session);
+
+                    if (!checkHmac(session)) {
+                        logger.warn("Session with ID: {} has invalid HMAC; locking account", session.getSessionId());
+                        userService.lockAccount(session.getUserAccount());
+                    } else {
+                        logger.info("Session with ID: {} expired and invalidated", session.getSessionId());
+                    }
+                });
     }
 
     @Override
     public boolean checkSession(long userId, String ip, String userAgent) {
-        logger.info("Checking session for user ID: {} with IP: {} and User-Agent: {}", userId, ip, userAgent);
-        Optional<Session> sessionOpt = sessionRepository.findByUserAccount_UserIdAndIsActive(userId, true);
-        if (sessionOpt.isEmpty()) {
-            logger.info("No active session found for user ID: {}", userId);
-            return false;
-        } else {
-            Session session = sessionOpt.get();
-            if (session.getUserAgent().equals(userAgent) && session.getIpAddress().equals(ip)) {
-                logger.info("Session for user ID: {} is valid", userId);
-                return true;
-            } else {
-                logger.info("Session for user ID: {} is invalid due to mismatch in IP or User-Agent", userId);
-                return false;
-            }
-        }
+        logger.debug("Checking session for user ID: {} with IP: {} and User-Agent: {}", userId, ip, userAgent);
+        return sessionRepository.findByUserAccount_UserIdAndIsActive(userId, true)
+                .filter(session -> session.getIpAddress().equals(ip) && session.getUserAgent().equals(userAgent))
+                .isPresent();
     }
 
     @Override
     public String getSessionId(long userId) {
-        logger.info("Fetching session ID for user ID: {}", userId);
-        Optional<Session> sessionOpt = sessionRepository.findByUserAccount_UserIdAndIsActive(userId, true);
-        if (sessionOpt.isEmpty()) {
-            logger.error("No active session found for user ID: {}", userId);
-            throw new RuntimeException("The Session is empty");
-        } else {
-            String sessionId = sessionOpt.get().getSessionId();
-            logger.info("Session ID for user ID: {} is {}", userId, sessionId);
-            return sessionId;
-        }
+        logger.debug("Fetching session ID for user ID: {}", userId);
+        return sessionRepository.findByUserAccount_UserIdAndIsActive(userId, true)
+                .map(Session::getSessionId)
+                .orElseThrow(() -> new SessionNotFoundException("No active session for user ID: " + userId));
     }
 
     @Override
     public void invalidateSession(long userId) {
         logger.info("Invalidating session for user ID: {}", userId);
-        Optional<Session> sessionOptional = sessionRepository.findByUserAccount_UserIdAndIsActive(userId, true);
-        sessionOptional.ifPresent(session -> {
-            session.setActive(false);
-            sessionRepository.save(session);
-            logger.info("Session for user ID: {} has been invalidated", userId);
-        });
+        sessionRepository.findByUserAccount_UserIdAndIsActive(userId, true)
+                .ifPresent(session -> updateSessionStatus(session.getSessionId(), false));
     }
 
     @Override
     public void invalidateAllActiveSessions() {
-        logger.info("Invalidating all active sessions");
+        logger.info("Invalidating all active sessions.");
         List<Session> allActiveSessions = sessionRepository.findByIsActive(true);
-        for (Session session : allActiveSessions) {
-            session.setActive(false);
-            sessionRepository.save(session);
-            logger.info("Session with ID: {} has been invalidated", session.getSessionId());
-        }
+        allActiveSessions.forEach(session -> updateSessionStatus(session.getSessionId(), false));
     }
 
     private String generateSessionId() {
-        String sessionId = java.util.UUID.randomUUID().toString();
-        logger.debug("Generated session ID: {}", sessionId);
-        return sessionId;
+        return java.util.UUID.randomUUID().toString();
+    }
+
+    private boolean checkHmac(Session session) {
+        String hmacRaw = session.getSessionId() + session.getUserAccount().getUserId() + session.getIpAddress();
+        return hashingService.matches(hmacRaw, session.getHmac());
+    }
+
+    private void updateSessionStatus(String sessionId, boolean isActive) {
+        sessionRepository.findBySessionId(sessionId).ifPresent(session -> {
+            session.setActive(isActive);
+            sessionRepository.save(session);
+            logger.info("Session with ID: {} has been {}", sessionId, isActive ? "activated" : "invalidated");
+        });
     }
 
     public String getClientIp(HttpServletRequest request) {
@@ -164,14 +147,7 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public String getUserAgent(HttpServletRequest request) {
-        String userAgent = request.getHeader("User-Agent");
-        return userAgent;
-    }
-
-    private boolean checkHmac(Session session) {
-        String hmacRaw = session.getSessionId() + session.getUserAccount().getUserId() + session.getIpAddress();
-        boolean isValid = hashingService.matches(hmacRaw, session.getHmac());
-        return isValid;
+        return request.getHeader("User-Agent");
     }
 }
 

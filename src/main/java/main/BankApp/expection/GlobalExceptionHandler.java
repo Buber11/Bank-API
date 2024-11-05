@@ -21,7 +21,8 @@ import java.util.stream.Collectors;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(AccountServiceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleExceptions(Exception ex) {
         HttpStatus status = mapExceptionToStatus(ex);
@@ -32,15 +33,21 @@ public class GlobalExceptionHandler {
     }
 
     private HttpStatus mapExceptionToStatus(Exception ex) {
-        Map<Class<? extends Exception>, HttpStatus> exceptionToStatusMap = Map.of(
-                AuthenticationException.class, HttpStatus.UNAUTHORIZED,
-                EntityNotFoundException.class, HttpStatus.NOT_FOUND,
-                DuplicateException.class, HttpStatus.BAD_REQUEST,
-                RSAException.class, HttpStatus.INTERNAL_SERVER_ERROR,
-                MethodArgumentNotValidException.class, HttpStatus.BAD_REQUEST
-        );
-
-        return exceptionToStatusMap.getOrDefault(ex.getClass(), HttpStatus.INTERNAL_SERVER_ERROR);
+        if (ex instanceof AuthenticationException) {
+            return HttpStatus.UNAUTHORIZED;
+        } else if (ex instanceof EntityNotFoundException || ex instanceof UserNotFoundException) {
+            return HttpStatus.NOT_FOUND;
+        } else if (ex instanceof DuplicateException) {
+            return HttpStatus.BAD_REQUEST;
+        } else if (ex instanceof RSAException) {
+            return HttpStatus.INTERNAL_SERVER_ERROR;
+        } else if (ex instanceof BalanceUpdateException) {
+            return HttpStatus.BAD_REQUEST;
+        } else if (ex instanceof MethodArgumentNotValidException) {
+            return HttpStatus.BAD_REQUEST;
+        } else {
+            return HttpStatus.INTERNAL_SERVER_ERROR;
+        }
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -58,15 +65,6 @@ public class GlobalExceptionHandler {
         return ResponseUtil.buildErrorResponse(status, errors);
     }
 
-//    @ExceptionHandler(RuntimeException.class)
-//    public ResponseEntity<Object> handleRuntimeExceptions(RuntimeException ex) {
-//        HttpStatus status = HttpStatus.BAD_REQUEST;
-//        String message = "A runtime error occurred. Please check your request and try again.";
-//
-//        logger.error("Runtime exception: {} - {}", ex.getClass().getSimpleName(), ex.getMessage(), ex);
-//        return ResponseUtil.buildErrorResponse(status, message);
-//    }
-
     @ExceptionHandler(Throwable.class)
     public ResponseEntity<Object> handleUnhandledExceptions(Throwable ex) {
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -76,4 +74,10 @@ public class GlobalExceptionHandler {
         return ResponseUtil.buildErrorResponse(status, message);
     }
 
+    @ExceptionHandler({AccountCreationException.class, BalanceUpdateException.class})
+    public ResponseEntity<Object> handleCustomExceptions(RuntimeException ex) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        logger.error("Custom exception handled: {} - {}", ex.getClass().getSimpleName(), ex.getMessage(), ex);
+        return ResponseUtil.buildErrorResponse(status, ex.getMessage());
+    }
 }

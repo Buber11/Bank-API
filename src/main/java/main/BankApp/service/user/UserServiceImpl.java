@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import main.BankApp.dto.UserModel;
 import main.BankApp.expection.RSAException;
+import main.BankApp.expection.UserNotFoundException;
 import main.BankApp.model.user.StatusAccount;
 import main.BankApp.model.user.UserAccount;
 import main.BankApp.model.user.UserPersonalData;
@@ -41,14 +42,14 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserAccount getUser(long id) {
         return userRepository.findById(id)
-                .orElseThrow( EntityNotFoundException::new );
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + id));
     }
 
     @Override
     public UserModel getUserView(HttpServletRequest request) {
         long userId = (long) request.getAttribute("id");
         UserAccount userAccount = userRepository.findById(userId)
-                .orElseThrow( EntityNotFoundException::new );
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
         return userModelAssembly.toModel(userAccount);
     }
 
@@ -71,14 +72,18 @@ public class UserServiceImpl implements UserService {
     @Override
     public void changeUserStatus(long userId, StatusAccount statusAccount) {
         UserAccount userAccount = userRepository.findById(userId)
-                .orElseThrow(EntityNotFoundException::new);
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
         userAccount.setStatus(statusAccount);
         userRepository.save(userAccount);
+        logger.info("Changed status for user ID: {} to {}", userId, statusAccount);
     }
 
     @Override
     public void delete(long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new UserNotFoundException("User not found with ID: " + userId);
+        }
         userRepository.deleteById(userId);
+        logger.info("Deleted user with ID: {}", userId);
     }
-
 }

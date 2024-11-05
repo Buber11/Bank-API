@@ -1,6 +1,7 @@
 package main.BankApp.service.activityLog;
 
 import lombok.RequiredArgsConstructor;
+import main.BankApp.expection.LogNotFoundException;
 import main.BankApp.model.session.ActivityLog;
 import main.BankApp.model.session.ActivityLogAction;
 import main.BankApp.model.session.Session;
@@ -22,9 +23,8 @@ public final class ActivityLogServiceImpl implements ActivityLogService {
     private final HashingService hashingService;
 
     @Override
-    public ActivityLog createLog(Session session,
-                                 ActivityLogAction action) {
-        String logId = generateSessionId();
+    public ActivityLog createLog(Session session, ActivityLogAction action) {
+        String logId = generateLogId(); // Renamed for clarity
         String dataToHash = logId + session.getSessionId() + action;
         String hmac = hashingService.hash(dataToHash);
 
@@ -36,14 +36,15 @@ public final class ActivityLogServiceImpl implements ActivityLogService {
                 .hmac(hmac)
                 .build();
 
-        logger.info("Creating log: {}", logId);
+        logger.debug("Creating log with ID: {}", logId); // Changed to debug for detailed information
         return activityLogRepository.save(log);
     }
 
     @Override
     public ActivityLog getLog(String logId) {
         logger.info("Fetching log with ID: {}", logId);
-        return activityLogRepository.findById(logId).orElse(null);
+        return activityLogRepository.findById(logId)
+                .orElseThrow(() -> new LogNotFoundException("Log not found for ID: " + logId)); // Throwing custom exception
     }
 
     @Override
@@ -52,9 +53,9 @@ public final class ActivityLogServiceImpl implements ActivityLogService {
         activityLogRepository.deleteById(logId);
     }
 
-    private String generateSessionId() {
-        String sessionId = java.util.UUID.randomUUID().toString();
-        logger.debug("Generated session ID: {}", sessionId);
-        return sessionId;
+    private String generateLogId() { // Renamed for clarity
+        String logId = java.util.UUID.randomUUID().toString();
+        logger.debug("Generated log ID: {}", logId);
+        return logId;
     }
 }

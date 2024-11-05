@@ -25,36 +25,45 @@ public class ContactServiceImpl implements ContactService {
 
     private final ContactRepository contactRepository;
     private final UserService userService;
-    private final Function<HttpServletRequest,Long> getUserIdFromJwt = e -> (Long) e.getAttribute("id");
+    private final Function<HttpServletRequest, Long> getUserIdFromJwt = req -> (Long) req.getAttribute("id");
 
     @Override
     @Loggable
     public void save(ContactRequest contactRequest, HttpServletRequest request) {
-        Long userId = getUserIdFromJwt.apply(request);
-
-        Optional<Contact> existingContact = contactRepository.findByNumberAccount(contactRequest.numberAccount());
-        if (existingContact.isPresent()) {
-            Contact contact = existingContact.get();
-            contact.setNumberOfUse(contact.getNumberOfUse() + 1);
-            contact.setDateOfLastUse(LocalDate.now());
-            contactRepository.save(contact);
-        } else {
-            Contact newContact = createContact(contactRequest);
-            UserAccount userAccount = userService.getUser(userId);
-            newContact.setUserAccount(userAccount);
-            contactRepository.save(newContact);
-        }
+        Long userId = extractUserId(request);
+        contactRepository.findByNumberAccount(contactRequest.numberAccount())
+                .ifPresentOrElse(
+                        contact -> updateExistingContact(contact),
+                        () -> saveNewContact(contactRequest, userId)
+                );
     }
 
     @Override
     @Loggable
     public List<ContactResponse> getAllContacts(HttpServletRequest request) {
-        Long userId = getUserIdFromJwt.apply(request);
-
+        Long userId = extractUserId(request);
         return contactRepository.findByUserAccount_UserId(userId).stream()
-                .sorted(Comparator.comparing(Contact::getNumberOfUse).reversed().thenComparing(Contact::getDateOfLastUse))
-                .map(this::createContactResponse)
+                .sorted(Comparator.comparing(Contact::getNumberOfUse).reversed()
+                        .thenComparing(Contact::getDateOfLastUse))
+                .map(this::convertToContactResponse)
                 .collect(Collectors.toList());
+    }
+
+    private Long extractUserId(HttpServletRequest request) {
+        return getUserIdFromJwt.apply(request);
+    }
+
+    private void updateExistingContact(Contact contact) {
+        contact.setNumberOfUse(contact.getNumberOfUse() + 1);
+        contact.setDateOfLastUse(LocalDate.now());
+        contactRepository.save(contact);
+    }
+
+    private void saveNewContact(ContactRequest contactRequest, Long userId) {
+        Contact newContact = createContact(contactRequest);
+        UserAccount userAccount = userService.getUser(userId);
+        newContact.setUserAccount(userAccount);
+        contactRepository.save(newContact);
     }
 
     private Contact createContact(ContactRequest contactRequest) {
@@ -62,10 +71,11 @@ public class ContactServiceImpl implements ContactService {
                 .name(contactRequest.name())
                 .numberAccount(contactRequest.numberAccount())
                 .dateOfLastUse(LocalDate.now())
-                .numberOfUse( Long.valueOf(1) )
+                .numberOfUse(1L)
                 .build();
     }
-    private ContactResponse createContactResponse(Contact contact) {
+
+    private ContactResponse convertToContactResponse(Contact contact) {
         return new ContactResponse(
                 contact.getContactId(),
                 contact.getName(),
