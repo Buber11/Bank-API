@@ -1,6 +1,7 @@
 package main.BankApp.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import main.BankApp.util.ResponseUtil;
 import main.BankApp.request.contact.ContactRequest;
@@ -16,8 +17,9 @@ public class ContactController {
     private final ContactService contactService;
 
     @PostMapping("/contacts")
-    public ResponseEntity<String> save(@RequestBody ContactRequest contactRequest, HttpServletRequest request){
+    public ResponseEntity<String> save(@Valid @RequestBody ContactRequest contactRequest, HttpServletRequest request){
         contactService.save(contactRequest, request);
+        System.out.println(contactRequest);
         return ResponseUtil.buildSuccessResponse("The Contact is sucessfuly added");
     }
 

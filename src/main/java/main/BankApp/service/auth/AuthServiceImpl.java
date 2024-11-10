@@ -25,7 +25,7 @@ import main.BankApp.service.account.AccountService;
 import main.BankApp.service.activityLog.ActivityLogService;
 import main.BankApp.service.googleAuthenticator.GoogleAuthService;
 import main.BankApp.service.hashing.HashingService;
-import main.BankApp.service.rsa.RSAService;
+import main.BankApp.service.rsa.VaultService;
 import main.BankApp.service.session.SessionService;
 import main.BankApp.service.user.UserModelAssembly;
 import org.slf4j.Logger;
@@ -39,7 +39,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -49,7 +48,7 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final UserPersonalDataRepository userPersonalDataRepository;
-    private final RSAService rsaService;
+    private final VaultService vaultService;
     private final HashingService hashingService;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
@@ -98,7 +97,7 @@ public class AuthServiceImpl implements AuthService {
         UserPersonalData userPersonalData = createUserPersonalData(request);
         UserAccount userAccount = UserAccount.builder()
                 .username(request.username())
-                .email(rsaService.encrypt(request.email()))
+                .email(vaultService.encrypt(request.email()))
                 .passwordHash(passwordEncoder.encode(request.password()))
                 .status(StatusAccount.ACTIVE)
                 .role(request.isBusiness() ? Role.COMPANY : Role.CLIENT)
@@ -114,13 +113,13 @@ public class AuthServiceImpl implements AuthService {
 
     private UserPersonalData createUserPersonalData(SignupRequest request) throws Exception {
         return UserPersonalData.builder()
-                .firstName(rsaService.encrypt(request.firstName()))
-                .lastName(rsaService.encrypt(request.lastName()))
-                .pesel(rsaService.encrypt(request.pesel()))
+                .firstName(vaultService.encrypt(request.firstName()))
+                .lastName(vaultService.encrypt(request.lastName()))
+                .pesel(vaultService.encrypt(request.pesel()))
                 .peselHash(hashingService.hash(request.pesel()))
-                .idCardNumber(rsaService.encrypt("0"))
-                .phoneNumber(rsaService.encrypt(request.phoneNumber()))
-                .countryOfOrigin(rsaService.encrypt(request.countryOfOrigin()))
+                .idCardNumber(vaultService.encrypt("0"))
+                .phoneNumber(vaultService.encrypt(request.phoneNumber()))
+                .countryOfOrigin(vaultService.encrypt(request.countryOfOrigin()))
                 .hmac(hashingService.hash(generatePersonalDataHmacContent(request)))
                 .build();
     }

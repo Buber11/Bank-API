@@ -3,14 +3,10 @@ package main.BankApp.service.user;
 import main.BankApp.controller.AuthController;
 import main.BankApp.controller.UserController;
 import main.BankApp.dto.UserModel;
-import main.BankApp.expection.RSAException;
 import main.BankApp.model.user.StatusAccount;
 import main.BankApp.model.user.UserAccount;
 import main.BankApp.model.user.UserPersonalData;
-import main.BankApp.repository.UserRepository;
-import main.BankApp.service.rsa.RSAService;
-import org.springframework.hateoas.CollectionModel;
-import org.springframework.hateoas.Link;
+import main.BankApp.service.rsa.VaultService;
 import org.springframework.hateoas.server.mvc.RepresentationModelAssemblerSupport;
 import org.springframework.stereotype.Component;
 
@@ -20,11 +16,11 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 @Component
 public class UserModelAssembly extends RepresentationModelAssemblerSupport<UserAccount, UserModel> {
 
-    private final RSAService rsaService;
+    private final VaultService vaultService;
 
-    public UserModelAssembly(RSAService theRsaService) {
+    public UserModelAssembly(VaultService theVaultService) {
         super(UserController.class, UserModel.class);
-        rsaService = theRsaService;
+        vaultService = theVaultService;
     }
 
     @Override
@@ -35,16 +31,16 @@ public class UserModelAssembly extends RepresentationModelAssemblerSupport<UserA
             userModel = UserModel.builder()
                     .userId(entity.getUserId())
                     .username(entity.getUsername())
-                    .email(rsaService.decrypt(entity.getEmail()))
+                    .email(vaultService.decrypt(entity.getEmail()))
                     .status(entity.getStatus())
                     .lastLogin(entity.getLastLogin())
                     .twoFactorEnabled(entity.isTwoFactorEnabled())
                     .consentToCommunication(entity.isConsentToCommunication())
-                    .firstName(rsaService.decrypt(userPersonalData.getFirstName()))
-                    .lastName(rsaService.decrypt(userPersonalData.getLastName()))
-                    .countryOfOrigin(rsaService.decrypt(userPersonalData.getCountryOfOrigin()))
-                    .phoneNumber(rsaService.decrypt(userPersonalData.getPhoneNumber()))
-                    .pesel(rsaService.decrypt(userPersonalData.getPesel()))
+                    .firstName(vaultService.decrypt(userPersonalData.getFirstName()))
+                    .lastName(vaultService.decrypt(userPersonalData.getLastName()))
+                    .countryOfOrigin(vaultService.decrypt(userPersonalData.getCountryOfOrigin()))
+                    .phoneNumber(vaultService.decrypt(userPersonalData.getPhoneNumber()))
+                    .pesel(vaultService.decrypt(userPersonalData.getPesel()))
                     .build();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -71,17 +67,17 @@ public class UserModelAssembly extends RepresentationModelAssemblerSupport<UserA
             userModel = UserModel.builder()
                     .userId(entity.getUserId())
                     .username(entity.getUsername())
-                    .email(rsaService.decrypt(entity.getEmail()))
+                    .email(vaultService.decrypt(entity.getEmail()))
                     .status(entity.getStatus())
                     .lastLogin(entity.getLastLogin())
                     .twoFactorEnabled(entity.isTwoFactorEnabled())
                     .consentToCommunication(entity.isConsentToCommunication())
                     .role(entity.getRole())
-                    .firstName(rsaService.decrypt(userPersonalData.getFirstName()))
-                    .lastName(rsaService.decrypt(userPersonalData.getLastName()))
-                    .countryOfOrigin(rsaService.decrypt(userPersonalData.getCountryOfOrigin()))
-                    .phoneNumber(rsaService.decrypt(userPersonalData.getPhoneNumber()))
-                    .pesel(rsaService.decrypt(userPersonalData.getPesel()))
+                    .firstName(vaultService.decrypt(userPersonalData.getFirstName()))
+                    .lastName(vaultService.decrypt(userPersonalData.getLastName()))
+                    .countryOfOrigin(vaultService.decrypt(userPersonalData.getCountryOfOrigin()))
+                    .phoneNumber(vaultService.decrypt(userPersonalData.getPhoneNumber()))
+                    .pesel(vaultService.decrypt(userPersonalData.getPesel()))
                     .build();
         } catch (Exception e) {
             throw new RuntimeException(e);

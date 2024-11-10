@@ -28,6 +28,7 @@ public class UserAccount implements UserDetails {
 
     private String username;
     private String passwordHash;
+    @Column(length = 500)
     private String email;
 
     @Enumerated(EnumType.STRING)

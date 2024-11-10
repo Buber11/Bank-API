@@ -3,8 +3,10 @@ package main.BankApp.security;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.Cookie;
 import main.BankApp.model.user.UserAccount;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -19,11 +21,12 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    @Value("${security.jwt.secret-key}")
+    @Value("${security.jwt.secret.key}")
     private String secretKey;
 
-    @Value("${security.jwt.expiration-time}")
+    @Value("${security.jwt.expiration.time}")
     private long jwtExpiration;
+
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);

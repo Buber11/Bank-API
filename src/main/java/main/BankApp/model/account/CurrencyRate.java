@@ -1,4 +1,4 @@
-package main.BankApp.model.currency;
+package main.BankApp.model.account;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
@@ -16,8 +16,8 @@ public class CurrencyRate {
     public static class Rate {
         private String no;
         private String effectiveDate;
-        private double mid;
-
+        private double bid;
+        private double ask;
     }
 
 }

@@ -19,15 +19,21 @@ public class UserPersonalData {
 
     @Id
     private Long userId;
-
+    @Column(length = 500)
     private String firstName;
+    @Column(length = 500)
     private String lastName;
+    @Column(length = 500)
     private String countryOfOrigin;
+    @Column(length = 500)
     private String phoneNumber;
+    @Column(length = 500)
     private String pesel;
     @Column(name = "pesel_hash")
     private String peselHash;
+    @Column(length = 500)
     private String sex;
+    @Column(length = 500)
     private String idCardNumber;
 
     private LocalDateTime updatedAt;

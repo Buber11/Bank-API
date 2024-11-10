@@ -21,6 +21,7 @@ public class AuthController {
 
     @PostMapping("/signup")
     public ResponseEntity<String> signup(@Valid @RequestBody SignupRequest signupRequest) {
+        System.out.println(signupRequest);
         String barCodeUrl = authService.signup(signupRequest);
         return ResponseUtil.buildSuccessResponse(barCodeUrl);
     }
@@ -31,22 +32,18 @@ public class AuthController {
         return ResponseEntity.ok(userModel);
     }
 
-    @PostMapping("/verify")
-    public ResponseEntity verify(){
 
-        return null;
-    }
 
     @GetMapping("/refresh-token")
-    public ResponseEntity<String> refreshToken(HttpServletRequest request, HttpServletResponse response){
+    public ResponseEntity refreshToken(HttpServletRequest request, HttpServletResponse response){
         authService.refreshToken(request,response);
-        return ResponseUtil.buildSuccessResponse("The token is refreshed");
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/logout")
-    public ResponseEntity<String> logout(HttpServletRequest request){
+    public ResponseEntity logout(HttpServletRequest request){
         authService.logout(request);
-        return ResponseUtil.buildSuccessResponse("Your session isn't active");
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/deactivate")

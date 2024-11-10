@@ -2,7 +2,9 @@ package main.BankApp.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import main.BankApp.dto.AccountModel;
 import main.BankApp.dto.TransactionModel;
+import main.BankApp.model.account.Currency;
 import main.BankApp.request.transaction.MultipleTransactionRequest;
 import main.BankApp.request.transaction.SingleTransactionRequest;
 import main.BankApp.service.account.AccountService;
@@ -42,7 +44,7 @@ public class AccountController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "transactionDate") String sortBy) {
 
-        Pageable pageable = PageRequest.of(page,size,Sort.by(sortBy));
+        Pageable pageable = PageRequest.of(page,size,Sort.by(sortBy).reverse());
         Page<TransactionModel> pageTransaction = accountService.getTransactions(pageable,accountNumber,status);
         return ResponseEntity.ok(pageTransaction);
     }
@@ -57,6 +59,15 @@ public class AccountController {
     public ResponseEntity doTransactions(@RequestBody MultipleTransactionRequest transactionRequest, HttpServletRequest request){
         accountService.doOwnMultipleTransaction(request,transactionRequest);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/accounts/{account-number}/currency")
+    public ResponseEntity<AccountModel> changeCurrency(
+            @PathVariable("account-number") String numberAccount,
+            @RequestParam("cur") Currency currency
+    ) {
+        AccountModel updatedAccount = accountService.convertCurrency(numberAccount, currency);
+        return ResponseEntity.ok(updatedAccount);
     }
 
 }

@@ -1,7 +1,5 @@
 package main.BankApp.service.account;
 
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
 import main.BankApp.controller.AccountController;
 import main.BankApp.dto.AccountModel;
 import main.BankApp.dto.TransactionModel;
@@ -9,7 +7,7 @@ import main.BankApp.expection.RSAException;
 import main.BankApp.model.account.Account;
 import main.BankApp.model.account.AccountType;
 import main.BankApp.model.account.Transaction;
-import main.BankApp.service.rsa.RSAService;
+import main.BankApp.service.rsa.VaultService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -18,7 +16,6 @@ import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.server.mvc.RepresentationModelAssemblerSupport;
 import org.springframework.stereotype.Component;
 
-import java.awt.font.TextHitInfo;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,11 +27,11 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 public class AccountModelAssembler extends RepresentationModelAssemblerSupport<Account, AccountModel> {
 
     private static final Logger logger = LoggerFactory.getLogger(AccountModelAssembler.class);
-    private final RSAService rsaService;
+    private final VaultService vaultService;
 
-    public AccountModelAssembler(RSAService rsaService) {
+    public AccountModelAssembler(VaultService vaultService) {
         super(AccountController.class, AccountModel.class);
-        this.rsaService = rsaService;
+        this.vaultService = vaultService;
     }
 
     @Override
@@ -65,7 +62,7 @@ public class AccountModelAssembler extends RepresentationModelAssemblerSupport<A
                 entity.getAccountNumber(), "in", 0, 10, null)).withRel("transactions-in"));
 
         accountModel.add(linkTo(methodOn(AccountController.class).getTransaction(
-                entity.getAccountNumber(), "out", 0, 10, null)).withRel("transactions-out"));
+                entity.getAccountNumber(), "out", 0, 10,null)).withRel("transactions-out"));
     }
 
     private void populateAccountModel(Account entity, AccountModel accountModel) {
@@ -74,7 +71,7 @@ public class AccountModelAssembler extends RepresentationModelAssemblerSupport<A
         accountModel.setAccountNumber(entity.getAccountNumber());
 
         try {
-            String decryptedAccountType = rsaService.decrypt(entity.getAccountType());
+            String decryptedAccountType = vaultService.decrypt(entity.getAccountType());
             accountModel.setAccountType(AccountType.valueOf(decryptedAccountType));
             logger.info("Successfully set account type for account number: {}", entity.getAccountNumber());
         } catch (Exception e) {
@@ -83,8 +80,9 @@ public class AccountModelAssembler extends RepresentationModelAssemblerSupport<A
         }
 
         try {
-            String decryptedBalance = rsaService.decrypt(entity.getBalance());
+            String decryptedBalance = vaultService.decrypt(entity.getBalance());
             accountModel.setBalance(decryptedBalance);
+            accountModel.setCurrency(entity.getCurrency());
             logger.info("Successfully set balance for account number: {}", entity.getAccountNumber());
         } catch (Exception e) {
             logger.error("Error decrypting balance for account number: {}", entity.getAccountNumber(), e);
@@ -120,12 +118,13 @@ public class AccountModelAssembler extends RepresentationModelAssemblerSupport<A
     private TransactionModel convertTransactionToModel(Transaction transaction) {
         try {
             return TransactionModel.builder()
-                    .referenceNumber(rsaService.decrypt(transaction.getReferenceNumber()))
+                    .referenceNumber(vaultService.decrypt(transaction.getReferenceNumber()))
                     .amount(transaction.getAmount())
                     .payeeAccountNumber(transaction.getPayeeAccount().getAccountNumber())
                     .hostAccountNumber(transaction.getHostAccount().getAccountNumber())
                     .description(transaction.getDescription())
                     .transactionDate(transaction.getTransactionDate())
+                    .currency(transaction.getCurrency())
                     .build()
                     .add(linkTo(methodOn(AccountController.class).doTransaction(null, null)).withRel("transactions"))
                     .add(linkTo(methodOn(AccountController.class).doTransactions(null, null)).withRel("transaction-group"));

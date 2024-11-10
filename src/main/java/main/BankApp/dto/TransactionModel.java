@@ -3,6 +3,7 @@ package main.BankApp.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import lombok.*;
+import main.BankApp.model.account.Currency;
 import org.springframework.hateoas.RepresentationModel;
 import org.springframework.hateoas.server.core.Relation;
 
@@ -23,5 +24,6 @@ public class TransactionModel extends RepresentationModel<TransactionModel> {
     private String payeeAccountNumber;
     private String description;
     private LocalDateTime transactionDate;
+    private Currency currency;
 }
 

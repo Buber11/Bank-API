@@ -5,12 +5,13 @@ import lombok.RequiredArgsConstructor;
 import main.BankApp.dto.TransactionModel;
 import main.BankApp.expection.RSAException;
 import main.BankApp.model.account.Account;
+import main.BankApp.model.account.Currency;
 import main.BankApp.model.account.Transaction;
 import main.BankApp.repository.TransactionRepository;
 import main.BankApp.request.transaction.MultipleTransactionRequest;
 import main.BankApp.request.transaction.SingleTransactionRequest;
 import main.BankApp.request.transaction.TransactionRequest;
-import main.BankApp.service.rsa.RSAService;
+import main.BankApp.service.rsa.VaultService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -27,7 +28,7 @@ public class TransactionServiceImpl implements TransactionService{
 
     private final TransactionRepository transactionRepository;
     private final Function<HttpServletRequest,Long> getUserIdFromJwt = e -> (Long) e.getAttribute("id");
-    private final RSAService rsaService;
+    private final VaultService vaultService;
     private final AccountModelAssembler accountModelAssembler;
 
     @Override
@@ -64,19 +65,21 @@ public class TransactionServiceImpl implements TransactionService{
     private Transaction createTransaction(TransactionRequest transactionRequest) {
         String referenceNumber = generateReferenceNumber();
 
-        if (transactionRequest instanceof SingleTransactionRequest( String hostAccountNumber,
-                                                                    BigDecimal amount,
-                                                                    String payeeAccountNumber,
-                                                                    String description,
-                                                                    String transactionType)) {
+        if (transactionRequest instanceof SingleTransactionRequest(String hostAccountNumber,
+                                                                   BigDecimal amount,
+                                                                   String payeeAccountNumber,
+                                                                   String description,
+                                                                   String transactionType,
+                                                                   Currency currency)) {
             try {
                 return Transaction.builder()
-                        .referenceNumber( rsaService.encrypt(referenceNumber) )
+                        .referenceNumber( vaultService.encrypt(referenceNumber) )
                         .transactionDate(LocalDateTime.now())
-                        .transactionType(rsaService.encrypt(transactionType.toString()))
+                        .transactionType(vaultService.encrypt(transactionType.toString()))
                         .amount(amount)
                         .description(description)
-                        .hmac( rsaService.encrypt( new StringBuilder()
+                        .currency(currency)
+                        .hmac( vaultService.encrypt( new StringBuilder()
                                 .append(referenceNumber)
                                 .append(amount.toString())
                                 .append(payeeAccountNumber)
@@ -90,15 +93,17 @@ public class TransactionServiceImpl implements TransactionService{
                                                                             BigDecimal amount,
                                                                             List<String> payeeAccountNumber,
                                                                             String description,
-                                                                            String transactionType)) {
+                                                                            String transactionType,
+                                                                            Currency currency)) {
             try {
                 return Transaction.builder()
-                        .referenceNumber(rsaService.encrypt(referenceNumber))
+                        .referenceNumber(vaultService.encrypt(referenceNumber))
                         .transactionDate(LocalDateTime.now())
-                        .transactionType(rsaService.encrypt(transactionType.toString()))
+                        .transactionType(vaultService.encrypt(transactionType.toString()))
                         .amount(amount)
                         .description(description)
-                        .hmac(rsaService.encrypt(new StringBuilder()
+                        .currency(currency)
+                        .hmac(vaultService.encrypt(new StringBuilder()
                                 .append(referenceNumber)
                                 .append(amount.toString())
                                 .append(payeeAccountNumber)

@@ -45,7 +45,6 @@ public class ContactRepositoryTest {
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .consentToCommunication(true)
-                .isBusinessAccount(false)
                 .hmac("some_hmac_value")
                 .build();
 

@@ -1,7 +1,7 @@
 package main.BankApp.service.currency;
 
 import lombok.RequiredArgsConstructor;
-import main.BankApp.model.currency.CurrencyRate;
+import main.BankApp.model.account.CurrencyRate;
 import main.BankApp.common.Loggable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -40,7 +40,7 @@ public class CurrencyServiceImpl implements CurrencyService {
 
     private String buildUrl(String currency, String date) {
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(NBP_API_URL)
-                .pathSegment("A", currency);
+                .pathSegment("C", currency);
         if (date != null) {
             builder.pathSegment(date);
         }
@@ -63,4 +63,5 @@ public class CurrencyServiceImpl implements CurrencyService {
             throw new RuntimeException("Failed to fetch currency rate from NBP API", e);
         }
     }
+
 }

@@ -33,9 +33,11 @@ public class SecurityConfiguration {
             "api/v1/transactions",
             "api/v1/contacts",
             "api/v1/user",
+            "api/v1/accounts/{account-number}/currency",
+            "api/v1/transactions-group",
     };
     String[] companyEndpoints = {
-            "api/v1/transactions-group",
+//            "api/v1/transactions-group",
     };
     String[] workersEndpoints = {
             "/api/v1/users",
@@ -94,8 +96,8 @@ public class SecurityConfiguration {
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
-        configuration.setAllowedMethods(List.of("GET","POST","PUT","DELETE"));
+        configuration.setAllowedOrigins(List.of("http://localhost:3000","http://192.168.31.101:3000","https://192.168.31.101:8443"));
+        configuration.setAllowedMethods(List.of("GET","POST","PATCH","PUT","DELETE"));
         configuration.setAllowedHeaders(List.of("Authorization","Content-Type"));
         configuration.setAllowCredentials(true);
 

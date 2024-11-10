@@ -1,17 +1,14 @@
 package main.BankApp.service.user;
 
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import main.BankApp.dto.UserModel;
-import main.BankApp.expection.RSAException;
 import main.BankApp.expection.UserNotFoundException;
 import main.BankApp.model.user.StatusAccount;
 import main.BankApp.model.user.UserAccount;
-import main.BankApp.model.user.UserPersonalData;
 import main.BankApp.repository.UserRepository;
 import main.BankApp.service.hashing.HashingService;
-import main.BankApp.service.rsa.RSAService;
+import main.BankApp.service.rsa.VaultService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,7 +23,7 @@ public class UserServiceImpl implements UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
     private final UserRepository userRepository;
-    private final RSAService rsaService;
+    private final VaultService vaultService;
     private final HashingService hashingService;
     private final PasswordEncoder passwordEncoder;
     private final UserModelAssembly userModelAssembly;

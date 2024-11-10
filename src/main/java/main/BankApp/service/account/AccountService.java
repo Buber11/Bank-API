@@ -4,6 +4,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import main.BankApp.dto.AccountModel;
 import main.BankApp.dto.TransactionModel;
 import main.BankApp.model.account.Account;
+import main.BankApp.model.account.Currency;
+import main.BankApp.model.account.CurrencyRate;
 import main.BankApp.model.user.UserAccount;
 import main.BankApp.request.transaction.MultipleTransactionRequest;
 import main.BankApp.request.transaction.SingleTransactionRequest;
@@ -20,6 +22,7 @@ public interface AccountService {
 
     List<AccountModel> getAlAccounts(HttpServletRequest request);
     List<AccountModel> getAllAccountsActive();
+    AccountModel convertCurrency(String theAccountNumber, Currency theCurrency);
 
     void makeOwnSingleTransaction(HttpServletRequest request, SingleTransactionRequest transactionRequest);
     void doOwnMultipleTransaction(HttpServletRequest request, MultipleTransactionRequest multipleTransactionRequest);

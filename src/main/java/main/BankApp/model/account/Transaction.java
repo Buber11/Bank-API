@@ -38,6 +38,9 @@ public class Transaction {
 
     private String description;
 
+    @Enumerated(EnumType.STRING)
+    private Currency currency;
+
     private String hmac;
 
     @ManyToOne

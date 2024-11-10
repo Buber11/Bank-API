@@ -1,7 +1,7 @@
 package main.BankApp.controller;
 
 import lombok.RequiredArgsConstructor;
-import main.BankApp.model.currency.CurrencyRate;
+import main.BankApp.model.account.CurrencyRate;
 import main.BankApp.service.currency.CurrencyService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +23,7 @@ public class CurrencyRateController {
             CurrencyRate rate = currencyService.getCurrencyRate(currency);
             return ResponseEntity.ok(rate);
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             return ResponseEntity.status(404).build();
         }
     }
