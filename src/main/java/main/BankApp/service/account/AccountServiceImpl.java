@@ -221,7 +221,9 @@ public class AccountServiceImpl implements AccountService {
                 userId,
                 transactionRequest.hostAccountNumber(),
                 transactionRequest.payeeAccountNumber(),
-                transactionRequest.amount());
+                transactionRequest.amount(),
+                transactionRequest.currency()
+        );
         transactionService.saveTransaction(transactionRequest, accountSimpleEntry);
         logger.info("Single transaction made from account: {} to account: {}", transactionRequest.hostAccountNumber(), transactionRequest.payeeAccountNumber());
     }
@@ -235,7 +237,9 @@ public class AccountServiceImpl implements AccountService {
                     userId,
                     multipleTransactionRequest.hostAccountNumber(),
                     payeeAccountNumber,
-                    multipleTransactionRequest.amount());
+                    multipleTransactionRequest.amount(),
+                    multipleTransactionRequest.currency()
+                    );
             transactionService.saveTransaction(multipleTransactionRequest, accountSimpleEntry);
             logger.info("Multiple transaction made from account: {} to account: {}", multipleTransactionRequest.hostAccountNumber(), payeeAccountNumber);
         }
@@ -259,7 +263,7 @@ public class AccountServiceImpl implements AccountService {
         return transactionService.getTransactions(pageable, accountNumber, status);
     }
 
-    private AbstractMap.SimpleEntry<Account, Account> changeBalansAndGet(long userId, String accountNumber, String payeeAccountNumber, BigDecimal value) {
+    private AbstractMap.SimpleEntry<Account, Account> changeBalansAndGet(long userId, String accountNumber, String payeeAccountNumber, BigDecimal value, Currency currency) {
         logger.debug("Changing balance for user ID: {}, host account: {}, payee account: {}, amount: {}", userId, accountNumber, payeeAccountNumber, value);
         Optional<Account> hostTransactionAccount = accountRepository.findByAccountNumberAndUserAccount_UserId(accountNumber, userId);
         hostTransactionAccount.ifPresentOrElse(account -> {
@@ -285,8 +289,13 @@ public class AccountServiceImpl implements AccountService {
         Optional<Account> accountToUpdate = accountRepository.findByAccountNumber(payeeAccountNumber);
         accountToUpdate.ifPresentOrElse(account -> {
             try {
+                BigDecimal updatedValue = null;
+                if(currency != account.getCurrency()){
+                    updatedValue = convertToPLN(currency, value);
+                    updatedValue = convertFromPLN(account.getCurrency(), updatedValue);
+                }
                 BigDecimal balans = new BigDecimal(vaultService.decrypt(account.getBalance()));
-                balans = balans.add(value);
+                balans = balans.add(updatedValue);
                 account.setBalance(vaultService.encrypt(balans.toString()));
                 accountRepository.save(account);
                 logger.info("Balance updated for payee account: {}. New balance: {}", payeeAccountNumber, balans);
