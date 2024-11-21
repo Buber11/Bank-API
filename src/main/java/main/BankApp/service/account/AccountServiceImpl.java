@@ -293,6 +293,8 @@ public class AccountServiceImpl implements AccountService {
                 if(currency != account.getCurrency()){
                     updatedValue = convertToPLN(currency, value);
                     updatedValue = convertFromPLN(account.getCurrency(), updatedValue);
+                }else{
+                    updatedValue = value;
                 }
                 BigDecimal balans = new BigDecimal(vaultService.decrypt(account.getBalance()));
                 balans = balans.add(updatedValue);
