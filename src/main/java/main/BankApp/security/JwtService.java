@@ -5,6 +5,7 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import main.BankApp.model.user.UserAccount;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 
 import java.security.Key;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,6 +40,15 @@ public class JwtService {
 
     public String extractToken(String authHeader) {
         return authHeader.substring(7);
+    }
+
+    public String extractToken(HttpServletRequest request){
+        Cookie[] cookies = request.getCookies();
+        return Arrays.stream(cookies)
+                .filter(e -> e.getName().equals("jwt_token"))
+                .map(e -> e.getValue())
+                .findAny()
+                .orElse(null);
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
@@ -71,7 +82,7 @@ public class JwtService {
         return extractUsername(token).equals(userDetails.getUsername()) && !isTokenExpired(token);
     }
 
-    private boolean isTokenExpired(String token) {
+    public boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 

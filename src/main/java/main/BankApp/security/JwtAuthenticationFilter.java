@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
+import main.BankApp.service.bucket.BucketService;
 import main.BankApp.service.session.SessionService;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -30,6 +31,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final UserDetailsService userDetailsService;
     private final HandlerExceptionResolver handlerExceptionResolver;
     private final SessionService sessionService;
+    private final BucketService bucketService;
 
 
 
@@ -47,51 +49,46 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        Cookie[] cookies = request.getCookies();
-        String token = null;
+        String token = jwtService.extractToken(request);
+
         String ip = sessionService.getClientIp(request);
         String userAgent = sessionService.getUserAgent(request);
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if ("jwt_token".equals(cookie.getName())) {
-                    token = cookie.getValue();
-                    break;
-                }
-            }
-        }
 
         if (token != null) {
-            try {
-                final String jwt = token;
-                final String username = jwtService.extractUsername(jwt);
+            if(bucketService.tryConsume(token)){
+                try {
+                    final String jwt = token;
+                    final String username = jwtService.extractUsername(jwt);
 
-                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-                if (username != null && authentication == null) {
-                    UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+                    if (username != null && authentication == null) {
+                        UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
 
-                    if (jwtService.isTokenValid(jwt, userDetails)) {
-                        long userId = jwtService.extractUserId(jwt);
-                        if(sessionService.checkSession(userId,ip,userAgent)){
-                            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                                    userDetails,
-                                    null,
-                                    userDetails.getAuthorities()
-                            );
-                            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                            SecurityContextHolder.getContext().setAuthentication(authToken);
-                            long id = jwtService.extractUserId(jwt);
-                            request.setAttribute("id", id);
-                            request.setAttribute("session_id", sessionService.getSessionId(id));
+                        if (jwtService.isTokenValid(jwt, userDetails)) {
+                            long userId = jwtService.extractUserId(jwt);
+                            if(sessionService.checkSession(userId,ip,userAgent)){
+                                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                        userDetails,
+                                        null,
+                                        userDetails.getAuthorities()
+                                );
+                                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                                SecurityContextHolder.getContext().setAuthentication(authToken);
+                                long id = jwtService.extractUserId(jwt);
+                                request.setAttribute("id", id);
+                                request.setAttribute("session_id", sessionService.getSessionId(id));
+                            }
                         }
                     }
+                } catch (Exception exception) {
+                    handlerExceptionResolver.resolveException(request, response, null, exception);
+                    return;
                 }
-            } catch (Exception exception) {
-                handlerExceptionResolver.resolveException(request, response, null, exception);
-                return;
+            }else {
+                response.setStatus(429);
             }
         }
-
         filterChain.doFilter(request, response);
     }
 }
