@@ -24,13 +24,13 @@ public class Transaction {
     @Column(name = "transaction_id")
     private Long transactionID;
 
-    @Column(name = "reference_number", nullable = false)
+    @Column(name = "reference_number", length = 500, nullable = false)
     private String referenceNumber;
 
     @Column(name = "transaction_date", nullable = false)
     private LocalDateTime transactionDate;
 
-    @Column(name = "Transaction_Type", nullable = false)
+    @Column(name = "Transaction_Type", length = 500, nullable = false)
     private String transactionType;
 
     @Column(name = "amount", precision = 15, scale = 2, nullable = false)
@@ -41,6 +41,7 @@ public class Transaction {
     @Enumerated(EnumType.STRING)
     private Currency currency;
 
+    @Column(length = 500)
     private String hmac;
 
     @ManyToOne

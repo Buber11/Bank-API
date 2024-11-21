@@ -1,6 +1,7 @@
 package main.BankApp.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import main.BankApp.dto.AccountModel;
 import main.BankApp.dto.TransactionModel;
@@ -50,13 +51,13 @@ public class AccountController {
     }
 
     @PostMapping("/transactions")
-    public ResponseEntity doTransaction(@RequestBody SingleTransactionRequest transactionRequest, HttpServletRequest request){
+    public ResponseEntity doTransaction(@Valid @RequestBody SingleTransactionRequest transactionRequest, HttpServletRequest request){
         accountService.makeOwnSingleTransaction(request, transactionRequest);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/transactions-group")
-    public ResponseEntity doTransactions(@RequestBody MultipleTransactionRequest transactionRequest, HttpServletRequest request){
+    public ResponseEntity doTransactions(@Valid @RequestBody MultipleTransactionRequest transactionRequest, HttpServletRequest request){
         accountService.doOwnMultipleTransaction(request,transactionRequest);
         return ResponseEntity.noContent().build();
     }

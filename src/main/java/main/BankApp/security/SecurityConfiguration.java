@@ -21,28 +21,30 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfiguration {
 
-    String[] endpointsPermitAll = {
-            "api/v1/auth/login",
-            "api/v1/auth/signup",
-            "api/v1/currency/**"
+    public static final String[] PUBLIC_ENDPOINTS = {
+            "/api/v1/auth/login",
+            "/api/v1/auth/signup",
+            "/api/v1/currency"
     };
 
-    String[] clientEndpoints = {
+    private static final String[] CLIENT_ENDPOINTS = {
             "api/v1/accounts",
             "api/v1/accounts/*/transaction/*",
             "api/v1/transactions",
             "api/v1/contacts",
             "api/v1/user",
             "api/v1/accounts/{account-number}/currency",
-            "api/v1/transactions-group",
+            "api/v1/transactions-group"
     };
-    String[] companyEndpoints = {
-//            "api/v1/transactions-group",
+
+    private static final String[] COMPANY_ENDPOINTS = {
+            "api/v1/transactions-group"
     };
-    String[] workersEndpoints = {
+
+    private static final String[] WORKERS_ENDPOINTS = {
             "/api/v1/users",
             "api/v1/users/{id}/{status}",
-            "api/v1/users/{id}",
+            "api/v1/users/{id}"
     };
 
 
@@ -61,19 +63,17 @@ public class SecurityConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
                 .authorizeHttpRequests(e -> e
-                        .requestMatchers(endpointsPermitAll).permitAll()
-                        .requestMatchers(clientEndpoints).hasAnyRole("CLIENT","COMPANY")
-                        .requestMatchers(companyEndpoints).hasRole("COMPANY")
-                        .requestMatchers(workersEndpoints).hasRole("WORKER")
-                        .anyRequest().authenticated() )
-                        .sessionManagement(e-> e.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-
-
-        httpSecurity.csrf(httpSecurityCsrfConfigurer -> httpSecurityCsrfConfigurer.disable())
-                        .authenticationProvider(authenticationProvider)
-                        .addFilterBefore(jwtAuthenticationFilter,UsernamePasswordAuthenticationFilter.class);
-        httpSecurity.httpBasic(Customizer.withDefaults());
-        httpSecurity.cors(cors -> corsConfigurationSource());
+                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(CLIENT_ENDPOINTS).hasAnyRole("CLIENT", "COMPANY")
+                        .requestMatchers(COMPANY_ENDPOINTS).hasRole("COMPANY")
+                        .requestMatchers(WORKERS_ENDPOINTS).hasRole("WORKER")
+                        .anyRequest().authenticated())
+                .sessionManagement(e -> e.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf(e -> e.disable())
+                .authenticationProvider(authenticationProvider)
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .httpBasic(Customizer.withDefaults())
+                .cors(e -> e.configurationSource(corsConfigurationSource()));
 
         return httpSecurity.build();
 
@@ -96,7 +96,7 @@ public class SecurityConfiguration {
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of("http://localhost:3000","http://192.168.31.101:3000","https://192.168.31.101:8443"));
+        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
         configuration.setAllowedMethods(List.of("GET","POST","PATCH","PUT","DELETE"));
         configuration.setAllowedHeaders(List.of("Authorization","Content-Type"));
         configuration.setAllowCredentials(true);
@@ -107,4 +107,5 @@ public class SecurityConfiguration {
 
         return source;
     }
+
 }
